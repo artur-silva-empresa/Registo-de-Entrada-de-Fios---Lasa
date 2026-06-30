@@ -95,16 +95,16 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-xs text-left">
+            <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-semibold">Pedido</th>
-                <th className="px-4 py-3 font-semibold">Fio</th>
-                <th className="px-4 py-3 font-semibold text-right">Quantidade</th>
-                <th className="px-4 py-3 font-semibold">Data</th>
-                <th className="px-4 py-3 font-semibold">Guia</th>
-                <th className="px-4 py-3 font-semibold">Observações</th>
-                <th className="px-4 py-3 font-semibold text-right">Ações</th>
+                <th className="px-2 py-2 font-semibold">Pedido</th>
+                <th className="px-2 py-2 font-semibold">Fio</th>
+                <th className="px-2 py-2 font-semibold text-right">Quantidade</th>
+                <th className="px-2 py-2 font-semibold">Data</th>
+                <th className="px-2 py-2 font-semibold">Guia</th>
+                <th className="px-2 py-2 font-semibold">Observações</th>
+                <th className="px-2 py-2 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -117,10 +117,10 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               ) : (
                 filteredDeliveries.map((delivery) => (
                   <tr key={delivery.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-900">
+                    <td className="px-2 py-2 whitespace-nowrap font-medium text-slate-900">
                       {delivery.requestNumber}
                     </td>
-                    <td className="px-4 py-3 min-w-[200px]">
+                    <td className="px-2 py-2 min-w-[200px]">
                       <div className="font-medium text-slate-900">{delivery.itemDescription}</div>
                       <div className="text-xs text-slate-500 flex gap-2 mt-1">
                         <span>{delivery.itemSection}</span>
@@ -132,19 +132,19 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-emerald-600">
+                    <td className="px-2 py-2 whitespace-nowrap text-right font-bold text-emerald-600">
                       {delivery.quantity} {delivery.itemUnit}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                    <td className="px-2 py-2 whitespace-nowrap text-slate-600">
                       {new Date(delivery.displayDate).toLocaleDateString('pt-PT')}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                    <td className="px-2 py-2 whitespace-nowrap text-slate-600">
                       {delivery.deliveryNote || '-'}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 max-w-[150px] truncate" title={delivery.observations}>
+                    <td className="px-2 py-2 text-slate-600 max-w-[150px] truncate" title={delivery.observations}>
                       {delivery.observations || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <td className="px-2 py-2 whitespace-nowrap text-right">
                       <button
                         onClick={() => {
                           setSelectedDeliveryForEdit(delivery);

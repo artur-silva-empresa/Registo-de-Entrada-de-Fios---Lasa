@@ -57,8 +57,10 @@ function MainLayout() {
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        {renderPage()}
+      <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-6 overflow-x-hidden">
+        <div className="mx-auto w-full max-w-full">
+          {renderPage()}
+        </div>
       </main>
     </div>
   );
