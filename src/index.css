@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+.high-contrast {
+  filter: contrast(125%) saturate(125%);
+  font-weight: 500;
+}
+.high-contrast * {
+  border-color: rgba(0, 0, 0, 0.4) !important;
+}
+.high-contrast .text-slate-500,
+.high-contrast .text-slate-400,
+.high-contrast .text-slate-600 {
+  color: #1e293b !important; /* darker slate for readability */
+}
+.high-contrast .bg-slate-50 {
+  background-color: #f1f5f9 !important; 
+}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AppProvider } from './store';
+import React, { useState, useEffect } from 'react';
+import { AppProvider, useAppStore } from './store';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { Pedidos } from './pages/Pedidos';
@@ -9,8 +9,17 @@ import { Stock } from './pages/Stock';
 import { Faltas } from './pages/Faltas';
 import { Settings } from './pages/Settings';
 
-export default function App() {
+function MainLayout() {
   const [currentPage, setCurrentPage] = useState('cru_dashboard');
+  const { state } = useAppStore();
+
+  useEffect(() => {
+    if (state.highContrast) {
+      document.documentElement.classList.add('high-contrast');
+    } else {
+      document.documentElement.classList.remove('high-contrast');
+    }
+  }, [state.highContrast]);
 
   const renderPage = () => {
     if (currentPage === 'settings') return <Settings />;
@@ -38,13 +47,19 @@ export default function App() {
   };
 
   return (
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
+      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        {renderPage()}
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
     <AppProvider>
-      <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {renderPage()}
-        </main>
-      </div>
+      <MainLayout />
     </AppProvider>
   );
 }

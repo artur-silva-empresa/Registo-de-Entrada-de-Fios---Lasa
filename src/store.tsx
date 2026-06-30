@@ -39,6 +39,7 @@ type AppState = {
   requests: Request[];
   items: RequestItem[];
   deliveries: Delivery[];
+  highContrast?: boolean;
 };
 
 type AppContextType = {
@@ -49,6 +50,7 @@ type AppContextType = {
   deleteDelivery: (id: string) => void;
   updateRequestItem: (itemId: string, updates: Partial<Omit<RequestItem, 'id' | 'requestId'>>) => void;
   deleteRequest: (id: string) => void;
+  toggleHighContrast: () => void;
   clearAll: () => void;
   importData: (data: AppState) => void;
   handleOpenFile: () => Promise<void>;
@@ -533,6 +535,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const toggleHighContrast = () => {
+    setState(prev => ({
+      ...prev,
+      highContrast: !prev.highContrast
+    }));
+  };
+
   const clearAll = async () => {
     setState({ requests: [], items: [], deliveries: [] });
   };
@@ -569,7 +578,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   return (
-    <AppContext.Provider value={{ state, addRequest, addDelivery, updateDelivery, deleteDelivery, updateRequestItem, deleteRequest, clearAll, importData, handleOpenFile, handleNewFile, saveToFile, downloadBackup, closeDatabase, memorizeFile, fileHandle, storedHandle }}>
+    <AppContext.Provider value={{ state, addRequest, addDelivery, updateDelivery, deleteDelivery, updateRequestItem, deleteRequest, toggleHighContrast, clearAll, importData, handleOpenFile, handleNewFile, saveToFile, downloadBackup, closeDatabase, memorizeFile, fileHandle, storedHandle }}>
       {children}
     </AppContext.Provider>
   );

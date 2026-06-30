@@ -44,14 +44,19 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         <div>
           <button 
             onClick={() => setExpandedSection(expandedSection === 'cru' ? null : 'cru')}
-            className="w-full flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 hover:text-slate-600 transition-colors"
+            className={cn(
+              "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors mb-2",
+              expandedSection === 'cru' 
+                ? "bg-slate-800 text-white shadow-sm" 
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+            )}
           >
             <span>Fio Cru</span>
-            {expandedSection === 'cru' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            {expandedSection === 'cru' ? <ChevronDown className="w-4 h-4 text-slate-300" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
           </button>
           
           {expandedSection === 'cru' && (
-            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
+            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200 mt-2 mb-4 pl-2 border-l-2 border-slate-100 ml-2">
               {cruItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
@@ -78,14 +83,19 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         <div>
           <button 
             onClick={() => setExpandedSection(expandedSection === 'tinto' ? null : 'tinto')}
-            className="w-full flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 hover:text-slate-600 transition-colors"
+            className={cn(
+              "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors mb-2",
+              expandedSection === 'tinto' 
+                ? "bg-slate-800 text-white shadow-sm" 
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+            )}
           >
             <span>Fio Tinto</span>
-            {expandedSection === 'tinto' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            {expandedSection === 'tinto' ? <ChevronDown className="w-4 h-4 text-slate-300" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
           </button>
           
           {expandedSection === 'tinto' && (
-            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
+            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200 mt-2 mb-4 pl-2 border-l-2 border-slate-100 ml-2">
               {tintoItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
