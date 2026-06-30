@@ -195,10 +195,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const downloadBackup = async () => {
     try {
-      // Tentar copiar o caminho para o clipboard para facilitar o paste
-      try {
-        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
-      } catch (err) {}
+      // Fazemos a cópia de forma assíncrona sem await, para que o JS continue imediatamente
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       if ('showSaveFilePicker' in window) {
         try {
@@ -219,9 +217,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch (err: any) {
           if (err.name === 'AbortError') return;
           console.warn('API bloqueada, a usar transferência tradicional', err);
+          if (err.name === 'SecurityError') {
+             alert('A janela de escolha foi bloqueada pelo navegador.\nSe estiver na pré-visualização, abra a aplicação num Novo Separador (↗ no topo direito).\n\nO download será feito para a pasta de Transferências.');
+          }
           fallbackDownload(state);
         }
       } else {
+        alert('O seu navegador não suporta a janela de escolha de destino. O download será feito para a pasta de Transferências.');
         fallbackDownload(state);
       }
     } catch (e: any) {
@@ -252,10 +254,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const memorizeFile = async () => {
     try {
-      // Tentar copiar o caminho para o clipboard para facilitar o paste
-      try {
-        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
-      } catch (err) {}
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       if (!('showOpenFilePicker' in window)) {
         return { success: false, message: 'O seu browser não suporta acesso direto a ficheiros para memorização.' };
@@ -330,10 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleOpenFile = async () => {
     try {
-      // Tentar copiar o caminho para o clipboard para facilitar o paste
-      try {
-        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
-      } catch (err) {}
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       let handle: any = null;
       let contents = '';
@@ -406,10 +402,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleNewFile = async () => {
     try {
-      // Tentar copiar o caminho para o clipboard para facilitar o paste
-      try {
-        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
-      } catch (err) {}
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       let handle: any = null;
       let isFallback = false;

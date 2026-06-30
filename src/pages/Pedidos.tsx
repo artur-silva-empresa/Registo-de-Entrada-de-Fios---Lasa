@@ -314,10 +314,10 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6 shrink-0 justify-end ml-4">
-                      <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-slate-900">{requestItems.length} itens</p>
-                        <p className="text-xs text-slate-500">
+                    <div className="flex items-center gap-6 shrink-0 justify-end ml-4 w-56">
+                      <div className="text-right hidden sm:block flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">{requestItems.length} itens</p>
+                        <p className="text-xs text-slate-500 truncate">
                           {totalQuantity.toLocaleString('pt-PT')} qtd total
                         </p>
                       </div>
