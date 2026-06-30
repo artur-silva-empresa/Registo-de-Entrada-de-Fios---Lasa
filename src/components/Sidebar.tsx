@@ -31,7 +31,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-slate-200 flex flex-col h-full">
+    <div className="w-72 bg-white border-r border-slate-200 flex flex-col h-full shrink-0">
       <div className="p-6 border-b border-slate-200">
         <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center text-white font-bold">
