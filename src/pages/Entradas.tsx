@@ -1,0 +1,584 @@
+import React, { useState } from 'react';
+import { useAppStore } from '../store';
+import { PackageCheck, Plus, Check, Search, ChevronDown, ChevronUp, ChevronRight, Edit2 } from 'lucide-react';
+import { cn } from '../lib/utils';
+
+export function Entradas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
+  const { state, addDelivery, updateDelivery } = useAppStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterSection, setFilterSection] = useState<'all' | 'Tinturaria' | 'Tecelagem' | 'Urdir'>('all');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [deliveryQuantity, setDeliveryQuantity] = useState<string>('');
+  const [deliveryNote, setDeliveryNote] = useState<string>('');
+  const [deliveryDate, setDeliveryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [deliveryObservations, setDeliveryObservations] = useState<string>('');
+  const [showOverDeliveryModal, setShowOverDeliveryModal] = useState(false);
+  const [pendingDelivery, setPendingDelivery] = useState<{ id: string, qty: number, note: string, date: string, observations: string } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [selectedDeliveryForEdit, setSelectedDeliveryForEdit] = useState<any>(null);
+  const [editDeliveryQuantity, setEditDeliveryQuantity] = useState('');
+  const [editDeliveryDate, setEditDeliveryDate] = useState('');
+  const [editDeliveryNote, setEditDeliveryNote] = useState('');
+  const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
+
+  const requests = state.requests.filter(r => (r.type || 'cru') === type);
+  const requestIds = new Set(requests.map(r => r.id));
+  const items = state.items.filter(i => requestIds.has(i.requestId));
+  const itemIds = new Set(items.map(i => i.id));
+  const deliveries = state.deliveries.filter(d => itemIds.has(d.itemId));
+
+  const pendingItems = items.filter(item => {
+    const delivered = deliveries.filter(d => d.itemId === item.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    return delivered < Number(item.quantity || 0);
+  });
+
+  const filteredItems = pendingItems.filter(item => {
+    const sectionDisplay = type === 'tinto' 
+                           ? (item.bobbin2To1 && item.bobbin2To1.trim() !== '-' && item.bobbin2To1.trim() !== '' ? 'Fios para tramar' : 'Fios para urdir')
+                           : (item.section.toLowerCase().includes('tecelagem') ? 'Tecelagem' :
+                              item.section.toLowerCase().includes('tinturaria') ? 'Tinturaria' : 
+                              item.section.toLowerCase().includes('urdir') ? 'Urdir' : 'Outros');
+                           
+    const groupByValue = type === 'tinto' ? (item.coneColor || item.description) : item.description;
+    
+    const matchesSearch = groupByValue.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.section.toLowerCase().includes(searchTerm.toLowerCase());
+                          
+    const matchesFilter = filterSection === 'all' || sectionDisplay === filterSection;
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  const groupedItems = filteredItems.reduce((acc, item) => {
+    const sectionDisplay = type === 'tinto' 
+                           ? (item.bobbin2To1 && item.bobbin2To1.trim() !== '-' && item.bobbin2To1.trim() !== '' ? 'Fios para tramar' : 'Fios para urdir')
+                           : (item.section.toLowerCase().includes('tecelagem') ? 'Tecelagem' :
+                              item.section.toLowerCase().includes('tinturaria') ? 'Tinturaria' : 
+                              item.section.toLowerCase().includes('urdir') ? 'Urdir' : 'Outros');
+    const unitDisplay = item.unit || 'Kg';
+    const groupByValue = type === 'tinto' ? (item.coneColor || item.description) : item.description;
+    const key = `${groupByValue}-${sectionDisplay}-${unitDisplay}`;
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        description: groupByValue,
+        section: sectionDisplay,
+        unit: unitDisplay,
+        totalPending: 0,
+        items: []
+      };
+    }
+    const delivered = deliveries.filter(d => d.itemId === item.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    const pending = Number(item.quantity || 0) - delivered;
+    acc[key].totalPending += pending;
+    acc[key].items.push({ ...item, pending, delivered });
+    return acc;
+  }, {} as Record<string, any>);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleItem = (key: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleDelivery = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!selectedItemId || !deliveryQuantity) return;
+
+    const qty = parseFloat(deliveryQuantity);
+    if (isNaN(qty) || qty <= 0) {
+      setErrorMsg('A quantidade inserida é inválida.');
+      return;
+    }
+
+    const item = items.find(i => i.id === selectedItemId);
+    const delivered = deliveries.filter(d => d.itemId === selectedItemId).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    
+    if (qty > Number(item?.quantity || 0) - delivered) {
+      setPendingDelivery({ id: selectedItemId, qty, note: deliveryNote, date: deliveryDate, observations: deliveryObservations });
+      setShowOverDeliveryModal(true);
+      return;
+    }
+
+    executeDelivery(selectedItemId, qty, deliveryNote, deliveryDate, deliveryObservations);
+  };
+
+  const executeDelivery = (id: string, qty: number, note: string, date: string, observations: string) => {
+    addDelivery(id, qty, note, date, observations);
+    setSelectedItemId(null);
+    setDeliveryQuantity('');
+    setDeliveryNote('');
+    setDeliveryDate(new Date().toISOString().split('T')[0]);
+    setDeliveryObservations('');
+    setShowOverDeliveryModal(false);
+    setPendingDelivery(null);
+  };
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Entradas ({type === 'cru' ? 'Receção' : 'Tingimento'})</h1>
+        <p className="text-slate-500 mt-2">Registe a entrega de {type === 'cru' ? 'fios' : 'fios tintos'} e faça o abate das faltas.</p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <PackageCheck className="w-5 h-5 text-emerald-600" />
+              Fios em Falta (Pendentes)
+            </h2>
+            <div className="flex items-center gap-4 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                />
+              </div>
+              <select
+                value={filterSection}
+                onChange={(e) => setFilterSection(e.target.value as any)}
+                className="w-full sm:w-auto py-2 pl-3 pr-8 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
+              >
+                <option value="all">Todos os Destinos</option>
+                {type === 'cru' ? (
+                  <>
+                    <option value="Tinturaria">Tinturaria</option>
+                    <option value="Tecelagem">Tecelagem</option>
+                    <option value="Urdir">Urdir</option>
+                    <option value="Outros">Outros</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Fios para urdir">Fios para urdir</option>
+                    <option value="Fios para tramar">Fios para tramar</option>
+                  </>
+                )}
+              </select>
+              <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                {pendingItems.length} itens
+              </span>
+            </div>
+          </div>
+
+          {Object.keys(groupedItems).length === 0 ? (
+            <div className="p-12 text-center text-slate-500">
+              {pendingItems.length === 0 
+                ? "Não existem fios em falta no momento." 
+                : "Nenhum fio encontrado com os filtros atuais."}
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {Object.values(groupedItems).map((group: any) => {
+                const isExpanded = expandedGroups.has(group.id);
+                
+                return (
+                  <div key={group.id} className="bg-white">
+                    <div 
+                      className="p-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between"
+                      onClick={() => toggleGroup(group.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-slate-400" />
+                        )}
+                        <div>
+                          <h3 className="text-sm font-medium text-slate-900">{group.description}</h3>
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{group.section}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-500 mb-1">Total em Falta</div>
+                        <div className="text-lg font-bold text-amber-600">{group.totalPending.toLocaleString('pt-PT')} {group.unit}</div>
+                      </div>
+                    </div>
+                    
+                    {isExpanded && (
+                      <div className="bg-slate-50 border-t border-slate-100 divide-y divide-slate-100 pl-8">
+                        {group.items.map((item: any) => {
+                          const request = requests.find(r => r.id === item.requestId);
+                          const isSelected = selectedItemId === item.id;
+
+                          return (
+                            <div key={item.id} className="flex flex-col">
+                              <div 
+                                className={cn(
+                                  "p-4 hover:bg-slate-100 transition-colors cursor-pointer border-l-4",
+                                  isSelected ? "border-emerald-500 bg-emerald-100/50" : "border-transparent"
+                                )}
+                                onClick={() => {
+                                  setSelectedItemId(item.id);
+                                  setDeliveryQuantity(item.pending.toString());
+                                }}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                      Pedido {request?.number}
+                                    </span>
+                                    {type === 'cru' && item.coneColor && (
+                                      <div className="text-xs text-slate-600 mt-1">
+                                        Cor: <strong className="text-slate-800">{item.coneColor}</strong>
+                                      </div>
+                                    )}
+                                    {type === 'tinto' && item.description !== item.coneColor && (
+                                      <div className="text-xs text-slate-600 mt-1">
+                                        Fio: <strong className="text-slate-800">{item.description}</strong>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-right ml-4">
+                                    <div className="text-sm font-bold text-amber-600">{item.pending.toLocaleString('pt-PT')} {item.unit || 'Kg'} em falta</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4 text-xs text-slate-500">
+                                    <span>Solicitado: <strong className="text-slate-700">{Number(item.quantity).toLocaleString('pt-PT')} {item.unit || 'Kg'}</strong></span>
+                                    <span>Entregue: <strong className="text-emerald-600">{Number(item.delivered).toLocaleString('pt-PT')} {item.unit || 'Kg'}</strong></span>
+                                  </div>
+                                  {item.delivered > 0 && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleItem(item.id);
+                                      }}
+                                      className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                      {expandedItems.has(item.id) ? (
+                                        <>Ocultar Entregas <ChevronUp className="w-3 h-3" /></>
+                                      ) : (
+                                        <>Ver Entregas <ChevronDown className="w-3 h-3" /></>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {expandedItems.has(item.id) && item.delivered > 0 && (
+                                <div className="bg-slate-50/80 p-4 border-l-4 border-transparent">
+                                  <div className="pl-4 border-l-2 border-slate-200">
+                                    <h4 className="text-xs font-semibold text-slate-500 uppercase mb-3">Histórico de Entregas</h4>
+                                    <div className="space-y-2">
+                                      {deliveries
+                                        .filter(d => d.itemId === item.id)
+                                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                        .map((delivery) => (
+                                          <div key={delivery.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                            <div className="flex items-center gap-2 min-w-[140px]">
+                                              <span className="font-bold text-emerald-600">{delivery.quantity} {item.unit || 'Kg'} entregues</span>
+                                              <span className="text-slate-400 text-xs">•</span>
+                                              <span className="text-slate-600">
+                                                {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('pt-PT') : new Date(delivery.date).toLocaleDateString('pt-PT')}
+                                              </span>
+                                            </div>
+                                            {delivery.deliveryNote && (
+                                              <div className="text-slate-600 flex items-center gap-1">
+                                                <span className="font-medium text-slate-500">Guia:</span> {delivery.deliveryNote}
+                                              </div>
+                                            )}
+                                            {delivery.observations && (
+                                              <div className="text-slate-600 flex items-center gap-1">
+                                                <span className="font-medium text-slate-500">Obs:</span> {delivery.observations}
+                                              </div>
+                                            )}
+                                            <div className="ml-auto pl-4">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setSelectedDeliveryForEdit(delivery);
+                                                  setEditDeliveryQuantity(delivery.quantity.toString());
+                                                  setEditDeliveryDate(delivery.deliveryDate || delivery.date.split('T')[0]);
+                                                  setEditDeliveryNote(delivery.deliveryNote || '');
+                                                  setEditDeliveryObservations(delivery.observations || '');
+                                                }}
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Editar Entrega"
+                                              >
+                                                <Edit2 className="w-4 h-4" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-8">
+            <h2 className="text-lg font-semibold text-slate-900 mb-6">Registar Entrada</h2>
+            
+            {!selectedItemId ? (
+              <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                <p className="text-sm text-slate-500">
+                  Selecione um item da lista ao lado para registar a sua entrega.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleDelivery} className="space-y-6">
+                {(() => {
+                  const item = items.find(i => i.id === selectedItemId);
+                  const delivered = deliveries.filter(d => d.itemId === selectedItemId).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+                  const pending = Number(item?.quantity || 0) - delivered;
+
+                  return (
+                    <>
+                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-sm font-medium text-slate-900 mb-1 line-clamp-2" title={type === 'tinto' ? (item?.coneColor || item?.description) : item?.description}>
+                          {type === 'tinto' ? (item?.coneColor || item?.description) : item?.description}
+                        </p>
+                        {type === 'tinto' && item?.coneColor && item?.coneColor !== item?.description && (
+                          <p className="text-xs text-slate-500 line-clamp-1" title={item?.description}>
+                            Fio: {item?.description}
+                          </p>
+                        )}
+                        {type === 'cru' && item?.coneColor && (
+                          <p className="text-xs text-slate-500 line-clamp-1" title={item?.coneColor}>
+                            Cor: {item?.coneColor}
+                          </p>
+                        )}
+                        <div className="flex justify-between text-xs mt-2">
+                          <span className="text-slate-500">Falta entregar:</span>
+                          <span className="font-bold text-amber-600">{pending.toLocaleString('pt-PT')} {item?.unit || 'Kg'}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="quantity" className="block text-sm font-medium text-slate-700 mb-1">
+                          Quantidade Recebida ({item?.unit || 'Kg'})
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            id="quantity"
+                            step="0.01"
+                            min="0.01"
+                            required
+                            value={deliveryQuantity}
+                            onChange={(e) => setDeliveryQuantity(e.target.value)}
+                            className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3 border"
+                            placeholder="Ex: 100"
+                          />
+                        </div>
+                        {errorMsg && (
+                          <p className="mt-2 text-sm text-red-600">{errorMsg}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label htmlFor="deliveryNote" className="block text-sm font-medium text-slate-700 mb-1">
+                          Nº Guia de Remessa
+                        </label>
+                        <input
+                          type="text"
+                          id="deliveryNote"
+                          required
+                          value={deliveryNote}
+                          onChange={(e) => setDeliveryNote(e.target.value)}
+                          className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3 border"
+                          placeholder="Ex: GR-2026/001"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="deliveryDate" className="block text-sm font-medium text-slate-700 mb-1">
+                          Data da Entrega
+                        </label>
+                        <input
+                          type="date"
+                          id="deliveryDate"
+                          required
+                          value={deliveryDate}
+                          onChange={(e) => setDeliveryDate(e.target.value)}
+                          className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3 border"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="deliveryObservations" className="block text-sm font-medium text-slate-700 mb-1">
+                          Observações
+                        </label>
+                        <textarea
+                          id="deliveryObservations"
+                          rows={3}
+                          value={deliveryObservations}
+                          onChange={(e) => setDeliveryObservations(e.target.value)}
+                          className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3 border resize-none"
+                          placeholder="Notas adicionais sobre a entrega..."
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedItemId(null)}
+                          className="flex-1 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          Confirmar
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showOverDeliveryModal && pendingDelivery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Quantidade Excedente</h3>
+            <p className="text-slate-500 mb-6">
+              A quantidade inserida é superior à quantidade em falta. Deseja continuar e registar esta entrega?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowOverDeliveryModal(false);
+                  setPendingDelivery(null);
+                }}
+                className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-medium rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => executeDelivery(pendingDelivery.id, pendingDelivery.qty, pendingDelivery.note, pendingDelivery.date, pendingDelivery.observations)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedDeliveryForEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Editar Entrega</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Quantidade Entregue
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editDeliveryQuantity}
+                  onChange={(e) => setEditDeliveryQuantity(e.target.value)}
+                  className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Data de Entrega
+                </label>
+                <input
+                  type="date"
+                  value={editDeliveryDate}
+                  onChange={(e) => setEditDeliveryDate(e.target.value)}
+                  className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Guia de Remessa
+                </label>
+                <input
+                  type="text"
+                  value={editDeliveryNote}
+                  onChange={(e) => setEditDeliveryNote(e.target.value)}
+                  className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Observações
+                </label>
+                <textarea
+                  rows={3}
+                  value={editDeliveryObservations}
+                  onChange={(e) => setEditDeliveryObservations(e.target.value)}
+                  className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setSelectedDeliveryForEdit(null)}
+                className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-medium rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedDeliveryForEdit && editDeliveryQuantity) {
+                    updateDelivery(selectedDeliveryForEdit.id, {
+                      quantity: Number(editDeliveryQuantity),
+                      deliveryDate: editDeliveryDate,
+                      deliveryNote: editDeliveryNote,
+                      observations: editDeliveryObservations
+                    });
+                    setSelectedDeliveryForEdit(null);
+                  }
+                }}
+                disabled={!editDeliveryQuantity || Number(editDeliveryQuantity) < 0}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
