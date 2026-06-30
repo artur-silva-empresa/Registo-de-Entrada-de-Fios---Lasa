@@ -37,7 +37,17 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
 export function Dashboard({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const { state } = useAppStore();
 
-  const requests = state.requests.filter(r => (r.type || 'cru') === type);
+  const requests = state.requests
+    .filter(r => (r.type || 'cru') === type)
+    .sort((a, b) => {
+      const numA = parseInt(a.number.replace(/\D/g, ''), 10);
+      const numB = parseInt(b.number.replace(/\D/g, ''), 10);
+      
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numB - numA;
+      }
+      return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
+    });
   const requestIds = new Set(requests.map(r => r.id));
   const items = state.items.filter(i => requestIds.has(i.requestId));
   const itemIds = new Set(items.map(i => i.id));

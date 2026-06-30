@@ -259,15 +259,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
           </div>
         ) : (
           <div className="divide-y divide-slate-200">
-            {[...requests].sort((a, b) => {
-              const dateA = new Date(a.date.replace(/DE:.*/i, '').trim()).getTime();
-              const dateB = new Date(b.date.replace(/DE:.*/i, '').trim()).getTime();
-              
-              const validDateA = isNaN(dateA) ? new Date(a.uploadDate).getTime() : dateA;
-              const validDateB = isNaN(dateB) ? new Date(b.uploadDate).getTime() : dateB;
-              
-              return validDateB - validDateA;
-            }).map((request) => {
+            {requests.map((request) => {
               const requestItems = items.filter(i => i.requestId === request.id);
               const isExpanded = expandedRequest === request.id;
 
