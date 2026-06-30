@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { Search, Filter, ArrowUpDown, ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, ChevronDown, ChevronRight, Download, History, X } from 'lucide-react';
 import { exportToExcel } from '../lib/excel';
 
 export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
@@ -8,6 +8,7 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'delivered'>('all');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [historyItem, setHistoryItem] = useState<any>(null);
 
   const requests = state.requests.filter(r => (r.type || 'cru') === type);
   const requestIds = new Set(requests.map(r => r.id));
@@ -81,6 +82,38 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
     });
   };
 
+  let historyRecords: any[] = [];
+  if (historyItem) {
+    const itemRequests = historyItem.items.map((i: any) => {
+       const req = state.requests.find(r => r.id === i.requestId);
+       return {
+         id: `req-${i.id}`,
+         type: 'entrada',
+         date: req ? new Date(req.uploadDate) : new Date(0),
+         title: `Pedido ${req?.number || 'N/A'}`,
+         quantity: i.quantity,
+         unit: i.unit || 'Kg',
+         note: ''
+       };
+    });
+    
+    const itemDeliveries = historyItem.items.flatMap((i: any) => 
+      state.deliveries.filter(d => d.itemId === i.id).map(d => ({
+        id: `del-${d.id}`,
+        type: 'entrega',
+        date: new Date(d.deliveryDate || d.date),
+        title: `Entrega (Pedido ${i.requestNumber})`,
+        quantity: d.quantity,
+        unit: i.unit || 'Kg',
+        note: [d.deliveryNote, d.observations].filter(Boolean).join(' - ')
+      }))
+    );
+
+    historyRecords = [...itemRequests, ...itemDeliveries]
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 5);
+  }
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -146,6 +179,9 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 <th className="font-semibold text-center border-r border-slate-200 p-0 w-0">
                   <div className="px-4 py-3 min-w-[100px]">Estado</div>
                 </th>
+                <th className="font-semibold text-center border-r border-slate-200 p-0 w-0">
+                  <div className="px-4 py-3 min-w-[80px]">Histórico</div>
+                </th>
                 <th className="p-0 w-full"></th>
               </tr>
             </thead>
@@ -210,6 +246,18 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                             </span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHistoryItem(item);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Ver histórico"
+                          >
+                            <History className="w-5 h-5" />
+                          </button>
+                        </td>
                         <td></td>
                       </tr>
                       {isExpanded && item.items.map((subItem, idx) => (
@@ -232,6 +280,7 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                             )}
                           </td>
                           <td></td>
+                          <td></td>
                         </tr>
                       ))}
                     </React.Fragment>
@@ -242,6 +291,65 @@ export function Stock({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
           </table>
         </div>
       </div>
+
+      {historyItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Histórico Recente</h3>
+                <p className="text-sm text-slate-500 mt-1">{historyItem.description}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Secção: {historyItem.section}</p>
+              </div>
+              <button
+                onClick={() => setHistoryItem(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              {historyRecords.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-4">Nenhum registo encontrado.</p>
+              ) : (
+                historyRecords.map((record) => (
+                  <div key={record.id} className="flex items-start justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                          record.type === 'entrada' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {record.type === 'entrada' ? 'Pedido' : 'Entrega'}
+                        </span>
+                        <span className="text-sm font-medium text-slate-900">{record.title}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {record.date.toLocaleDateString('pt-PT')}
+                      </p>
+                      {record.note && (
+                        <p className="text-xs text-slate-600 mt-1 italic">Obs: {record.note}</p>
+                      )}
+                    </div>
+                    <div className={`font-bold text-sm ${record.type === 'entrada' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                      {record.type === 'entrada' ? '+' : ''}{Number(record.quantity).toLocaleString('pt-PT')} {record.unit}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setHistoryItem(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

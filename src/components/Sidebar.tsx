@@ -1,5 +1,5 @@
-import React from 'react';
-import { LayoutDashboard, FileSpreadsheet, PackageCheck, Package, BarChart3, AlertTriangle, Settings, Save, Download, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { LayoutDashboard, FileSpreadsheet, PackageCheck, Package, BarChart3, AlertTriangle, Settings, Save, Download, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAppStore } from '../store';
 
@@ -10,6 +10,7 @@ type SidebarProps = {
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { saveToFile, downloadBackup, closeDatabase } = useAppStore();
+  const [expandedSection, setExpandedSection] = useState<'cru' | 'tinto' | null>(currentPage.startsWith('tinto') ? 'tinto' : 'cru');
   
   const cruItems = [
     { id: 'cru_dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -39,55 +40,73 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           Gestão de Fios
         </h1>
       </div>
-      <nav className="flex-1 p-4 overflow-y-auto space-y-6">
+      <nav className="flex-1 p-4 overflow-y-auto space-y-4">
         <div>
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Fio Cru</h2>
-          <div className="space-y-1">
-            {cruItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-slate-100 text-slate-900" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <button 
+            onClick={() => setExpandedSection(expandedSection === 'cru' ? null : 'cru')}
+            className="w-full flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 hover:text-slate-600 transition-colors"
+          >
+            <span>Fio Cru</span>
+            {expandedSection === 'cru' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+          
+          {expandedSection === 'cru' && (
+            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
+              {cruItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive 
+                        ? "bg-slate-100 text-slate-900" 
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div>
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4">Fio Tinto</h2>
-          <div className="space-y-1">
-            {tintoItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-slate-100 text-slate-900" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <button 
+            onClick={() => setExpandedSection(expandedSection === 'tinto' ? null : 'tinto')}
+            className="w-full flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 hover:text-slate-600 transition-colors"
+          >
+            <span>Fio Tinto</span>
+            {expandedSection === 'tinto' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+          
+          {expandedSection === 'tinto' && (
+            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
+              {tintoItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive 
+                        ? "bg-slate-100 text-slate-900" 
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </nav>
       <div className="p-4 border-t border-slate-200 space-y-1">
