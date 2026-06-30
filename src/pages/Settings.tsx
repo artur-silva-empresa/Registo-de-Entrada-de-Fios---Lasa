@@ -2,14 +2,25 @@ import React from 'react';
 import { Database, Download, Upload, Save, AlertCircle, CheckCircle2, Eye } from 'lucide-react';
 import { useAppStore } from '../store';
 
-export function Settings() {
+export function Settings({ onClose }: { onClose?: () => void }) {
   const { handleOpenFile, fileHandle, state, toggleHighContrast } = useAppStore();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configurações</h1>
-        <p className="text-slate-500 mt-2">Gira a base de dados da aplicação e preferências.</p>
+      <header className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configurações</h1>
+          <p className="text-slate-500 mt-2">Gira a base de dados da aplicação e preferências.</p>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-colors"
+            title="Fechar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        )}
       </header>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

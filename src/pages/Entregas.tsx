@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { Package, Search, Download, Edit2 } from 'lucide-react';
+import { Package, Search, Download, Edit2, X } from 'lucide-react';
 import { exportDeliveriesToExcel } from '../lib/excel';
 
 export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
@@ -81,8 +81,16 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               placeholder="Pesquisar por fio, pedido ou guia..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 

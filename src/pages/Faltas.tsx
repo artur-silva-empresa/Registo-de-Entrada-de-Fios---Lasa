@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { Search, Filter, Download, AlertCircle } from 'lucide-react';
+import { Search, Filter, Download, AlertCircle, X } from 'lucide-react';
 import { exportToExcel } from '../lib/excel';
 
 export function Faltas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
@@ -85,8 +85,16 @@ export function Faltas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               placeholder="Pesquisar por pedido, descrição ou destino..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+              className="w-full pl-10 pr-10 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">

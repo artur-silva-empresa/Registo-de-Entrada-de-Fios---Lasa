@@ -11,7 +11,15 @@ import { Settings } from './pages/Settings';
 
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('cru_dashboard');
+  const [previousPage, setPreviousPage] = useState('cru_dashboard');
   const { state } = useAppStore();
+
+  const handleNavigate = (page: string) => {
+    if (page !== 'settings') {
+      setPreviousPage(page);
+    }
+    setCurrentPage(page);
+  };
 
   useEffect(() => {
     if (state.highContrast) {
@@ -22,7 +30,7 @@ function MainLayout() {
   }, [state.highContrast]);
 
   const renderPage = () => {
-    if (currentPage === 'settings') return <Settings />;
+    if (currentPage === 'settings') return <Settings onClose={() => handleNavigate(previousPage)} />;
 
     const isTinto = currentPage.startsWith('tinto_');
     const type = isTinto ? 'tinto' : 'cru';
@@ -48,7 +56,7 @@ function MainLayout() {
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         {renderPage()}
       </main>
