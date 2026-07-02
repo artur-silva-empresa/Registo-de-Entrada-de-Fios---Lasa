@@ -23,7 +23,7 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
   const lines = splitText(payload.value, 18);
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={24} textAnchor="middle" fill="#0f172a" fontSize={11} fontWeight="bold">
+      <text x={0} y={0} dy={24} textAnchor="middle" fill="currentColor" className="text-slate-900" fontSize={11} fontWeight="bold">
         {lines.map((line, index) => (
           <tspan x={0} dy={index === 0 ? 0 : 14} key={index}>
             {line}{index === 3 && payload.value.length > 72 ? '...' : ''}
@@ -201,7 +201,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                       interval={0} 
                       tick={<CustomXAxisTick />}
                     />
-                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                    <YAxis tick={{ fontSize: 12, fill: 'currentColor', className: 'text-slate-500' }} />
                     <Tooltip 
                       formatter={(value: number, name: string, props: any) => [`${value.toLocaleString('pt-PT')} ${props.payload.unit}`, name]}
                       contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
