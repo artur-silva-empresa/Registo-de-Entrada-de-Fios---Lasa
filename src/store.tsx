@@ -71,7 +71,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEY = 'fios_app_data';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [] });
+  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [], darkMode: true, highContrast: true });
   const [fileHandle, setFileHandle] = useState<any>(null);
   const [storedHandle, setStoredHandle] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm?: () => void}>({ isOpen: false, title: '', message: '' });
@@ -253,7 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     // Release the file handle and clear state
     setFileHandle(null);
-    setState({ requests: [], items: [], deliveries: [] });
+    setState(prev => ({ ...prev, requests: [], items: [], deliveries: [] }));
     
     // Attempt to close the browser tab
     try {
@@ -305,7 +305,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const file = await storedHandle.getFile();
       const contents = await file.text();
       
-      let parsed = { requests: [], items: [], deliveries: [] };
+      let parsed: any = { requests: [], items: [], deliveries: [] };
       if (contents.trim()) {
         parsed = JSON.parse(contents);
       }
@@ -313,7 +313,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setState({
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
         items: Array.isArray(parsed.items) ? parsed.items : [],
-        deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : []
+        deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : [],
+        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : true,
+        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : true
       });
       setFileHandle(storedHandle);
     } catch (e: any) {
@@ -379,7 +381,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Acesso direto a ficheiros bloqueado, gravação automática inativa');
       }
       
-      let parsed = { requests: [], items: [], deliveries: [] };
+      let parsed: any = { requests: [], items: [], deliveries: [] };
       if (contents.trim()) {
         try {
           parsed = JSON.parse(contents);
@@ -392,7 +394,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setState({
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
         items: Array.isArray(parsed.items) ? parsed.items : [],
-        deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : []
+        deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : [],
+        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : true,
+        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : true
       });
       setFileHandle(handle);
 
@@ -418,7 +422,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       let handle: any = null;
       let isFallback = false;
-      const initialState = { requests: [], items: [], deliveries: [] };
+      const initialState = { requests: [], items: [], deliveries: [], darkMode: true, highContrast: true };
 
       try {
         if ('showSaveFilePicker' in window) {
@@ -555,7 +559,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearAll = async () => {
-    setState({ requests: [], items: [], deliveries: [] });
+    setState(prev => ({ ...prev, requests: [], items: [], deliveries: [] }));
   };
 
   const importData = (data: AppState) => {

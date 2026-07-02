@@ -11,7 +11,7 @@ type SidebarProps = {
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { saveToFile, downloadBackup, closeDatabase, showModal, toggleHighContrast, toggleDarkMode, state } = useAppStore();
   const [expandedSection, setExpandedSection] = useState<'cru' | 'tinto' | null>(currentPage.startsWith('tinto') ? 'tinto' : 'cru');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   
   const cruItems = [
     { id: 'cru_dashboard', label: 'Dashboard', icon: LayoutDashboard },
