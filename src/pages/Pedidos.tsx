@@ -57,6 +57,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   const allRequests = state.requests
     .filter(r => (r.type || 'cru') === type)
@@ -74,6 +75,12 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const allItems = state.items.filter(i => requestIds.has(i.requestId));
 
   const requests = allRequests.filter(request => {
+    if (type === 'cru' && filterType !== 'all') {
+      const isCertificado = /^\d{4}\s*-/.test(request.number);
+      if (filterType === 'certificados' && !isCertificado) return false;
+      if (filterType === 'normais' && isCertificado) return false;
+    }
+
     if (!searchTerm) return true;
     
     const requestItems = allItems.filter(i => i.requestId === request.id);
@@ -172,13 +179,41 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-6 flex-1 min-w-0 w-full">
-          <div className="shrink-0">
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 whitespace-nowrap">Pedidos de {type === 'cru' ? 'Fio' : 'Tingimento'}</h1>
             <p className="text-slate-500 mt-2">Faça upload e gira as solicitações de entrega diária.</p>
           </div>
-          <div className="relative w-full max-w-md">
+          <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex-1 sm:flex-none"
+            >
+              <Download className="w-4 h-4" />
+              Exportar Excel
+            </button>
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              multiple
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none"
+            >
+              <Upload className="w-4 h-4" />
+              {isUploading ? 'A processar...' : 'Upload Pedidos'}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-3xl">
+          <div className="relative flex-1">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -196,31 +231,17 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               </button>
             )}
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Exportar Excel
-          </button>
-          <input
-            type="file"
-            accept=".xlsx, .xls"
-            multiple
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Upload className="w-4 h-4" />
-            {isUploading ? 'A processar...' : 'Upload Pedidos'}
-          </button>
+          {type === 'cru' && (
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-64"
+            >
+              <option value="all">Todos os Pedidos</option>
+              <option value="certificados">Pedidos Fios Certificados</option>
+              <option value="normais">Pedidos Fios Normais</option>
+            </select>
+          )}
         </div>
       </header>
 

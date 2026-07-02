@@ -34,7 +34,7 @@ const CustomXAxisTick = ({ x, y, payload }: any) => {
   );
 };
 
-export function Dashboard({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
+export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto', onNavigate?: (page: string) => void }) {
   const { state } = useAppStore();
 
   const requests = state.requests
@@ -171,6 +171,8 @@ export function Dashboard({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
           icon={AlertCircle} 
           color="text-amber-600" 
           bgColor="bg-amber-100" 
+          onClick={type === 'cru' ? () => onNavigate?.(`${type}_faltas`) : undefined}
+          className={type === 'cru' ? "cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md" : ""}
         />
         <StatCard 
           title="Linhas Pendentes" 
@@ -181,49 +183,51 @@ export function Dashboard({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
         />
       </div>
 
-      <div className="space-y-8">
-        {Array.from(chartDataByUnit.entries()).map(([unit, chartData]) => (
-          <div key={unit} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">Visão Geral por Fio - {unit} (Top 15)</h2>
-            <div className="h-[450px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                  barGap={4}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    interval={0} 
-                    tick={<CustomXAxisTick />}
-                  />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip 
-                    formatter={(value: number, name: string, props: any) => [`${value.toLocaleString('pt-PT')} ${props.payload.unit}`, name]}
-                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend 
-                    verticalAlign="top" 
-                    align="center" 
-                    wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }} 
-                  />
-                  <Bar dataKey="Quantidade Pedida" stackId="pedido" fill="#1e3a8a" barSize={16} radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="Quantidade Entregue" stackId="status" fill="#22c55e" barSize={16} />
-                  <Bar dataKey="Quantidade em Falta" stackId="status" fill="transparent" stroke="#22c55e" strokeWidth={1} strokeDasharray="2 2" barSize={16} radius={[2, 2, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+      {type === 'cru' && (
+        <div className="space-y-8">
+          {Array.from(chartDataByUnit.entries()).map(([unit, chartData]) => (
+            <div key={unit} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-6">Visão Geral por Fio - {unit} (Top 15)</h2>
+              <div className="h-[450px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    barGap={4}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      interval={0} 
+                      tick={<CustomXAxisTick />}
+                    />
+                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                    <Tooltip 
+                      formatter={(value: number, name: string, props: any) => [`${value.toLocaleString('pt-PT')} ${props.payload.unit}`, name]}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend 
+                      verticalAlign="top" 
+                      align="center" 
+                      wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }} 
+                    />
+                    <Bar dataKey="Quantidade Pedida" stackId="pedido" fill="#1e3a8a" barSize={16} radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="Quantidade Entregue" stackId="status" fill="#22c55e" barSize={16} />
+                    <Bar dataKey="Quantidade em Falta" stackId="status" fill="transparent" stroke="#22c55e" strokeWidth={1} strokeDasharray="2 2" barSize={16} radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {chartDataByUnit.size === 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">Visão Geral por Fio</h2>
-            <p className="text-slate-500 text-sm text-center py-8">Nenhum dado disponível para o gráfico.</p>
-          </div>
-        )}
-      </div>
+          ))}
+          
+          {chartDataByUnit.size === 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-6">Visão Geral por Fio</h2>
+              <p className="text-slate-500 text-sm text-center py-8">Nenhum dado disponível para o gráfico.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -288,9 +292,12 @@ export function Dashboard({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, color, bgColor }: any) {
+function StatCard({ title, value, icon: Icon, color, bgColor, onClick, className = '' }: any) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex items-start gap-4">
+    <div 
+      className={`bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex items-start gap-4 ${className}`}
+      onClick={onClick}
+    >
       <div className={`p-4 rounded-full ${bgColor} shrink-0`}>
         <Icon className={`w-6 h-6 ${color}`} />
       </div>

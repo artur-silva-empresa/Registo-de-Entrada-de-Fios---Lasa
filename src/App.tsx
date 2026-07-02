@@ -44,7 +44,7 @@ function MainLayout() {
 
     switch (page) {
       case 'dashboard':
-        return <Dashboard type={type} />;
+        return <Dashboard type={type} onNavigate={handleNavigate} />;
       case 'pedidos':
         return <Pedidos type={type} />;
       case 'entradas':
