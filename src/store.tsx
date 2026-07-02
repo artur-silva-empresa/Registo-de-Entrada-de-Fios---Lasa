@@ -40,6 +40,7 @@ type AppState = {
   items: RequestItem[];
   deliveries: Delivery[];
   highContrast?: boolean;
+  darkMode?: boolean;
 };
 
 type AppContextType = {
@@ -51,6 +52,7 @@ type AppContextType = {
   updateRequestItem: (itemId: string, updates: Partial<Omit<RequestItem, 'id' | 'requestId'>>) => void;
   deleteRequest: (id: string) => void;
   toggleHighContrast: () => void;
+  toggleDarkMode: () => void;
   clearAll: () => void;
   importData: (data: AppState) => void;
   handleOpenFile: () => Promise<void>;
@@ -61,6 +63,7 @@ type AppContextType = {
   memorizeFile: () => Promise<{ success: boolean; message: string }>;
   fileHandle: any;
   storedHandle: any;
+  showModal: (title: string, message: string, onConfirm?: () => void) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +74,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [] });
   const [fileHandle, setFileHandle] = useState<any>(null);
   const [storedHandle, setStoredHandle] = useState<any>(null);
+  const [modalConfig, setModalConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm?: () => void}>({ isOpen: false, title: '', message: '' });
+
+  const showModal = (title: string, message: string, onConfirm?: () => void) => {
+    setModalConfig({ isOpen: true, title, message, onConfirm });
+  };
+
+  const hideModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   const isFirstRender = useRef(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,7 +167,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveToFile = async () => {
     if (!fileHandle) {
-      alert('Nenhum ficheiro aberto. Use a opção de transferir backup.');
+      showModal('Erro', 'Nenhum ficheiro aberto. Use a opção de transferir backup.');
       return;
     }
     
@@ -167,16 +179,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const hasPermission = await verifyAndRequestPermission(fileHandle);
       if (!hasPermission) {
-        alert('Permissão de escrita negada pelo browser.');
+        showModal('Erro', 'Permissão de escrita negada pelo browser.');
         return;
       }
       const writable = await fileHandle.createWritable();
       await writable.write(JSON.stringify(state, null, 2));
       await writable.close();
-      alert('Alterações guardadas com sucesso no ficheiro!');
+      showModal('Lasa Gestão de Stocks e Entradas', 'Alterações guardadas com sucesso no ficheiro!');
     } catch (e: any) {
       console.error('Failed to save to file', e);
-      alert(`Erro ao guardar: ${e.message || 'Verifique se o ficheiro não está aberto noutro programa.'}`);
+      showModal('Erro', `Erro ao guardar: ${e.message || 'Verifique se o ficheiro não está aberto noutro programa.'}`);
     }
   };
 
@@ -190,7 +202,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    alert('Backup transferido com sucesso (pasta de transferências do navegador)!');
+    showModal('Lasa Gestão de Stocks e Entradas', 'Backup transferido com sucesso (pasta de transferências do navegador)!');
   };
 
   const downloadBackup = async () => {
@@ -213,23 +225,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           await writable.write(JSON.stringify(state, null, 2));
           await writable.close();
           
-          alert('Backup guardado com sucesso!');
+          showModal('Lasa Gestão de Stocks e Entradas', 'Backup guardado com sucesso!');
         } catch (err: any) {
           if (err.name === 'AbortError') return;
           console.warn('API bloqueada, a usar transferência tradicional', err);
           if (err.name === 'SecurityError') {
-             alert('A janela de escolha foi bloqueada pelo navegador.\nSe estiver na pré-visualização, abra a aplicação num Novo Separador (↗ no topo direito).\n\nO download será feito para a pasta de Transferências.');
+             showModal('Lasa Gestão de Stocks e Entradas', 'A janela de escolha foi bloqueada pelo navegador.\nSe estiver na pré-visualização, abra a aplicação num Novo Separador (↗ no topo direito).\n\nO download será feito para a pasta de Transferências.');
           }
           fallbackDownload(state);
         }
       } else {
-        alert('O seu navegador não suporta a janela de escolha de destino. O download será feito para a pasta de Transferências.');
+        showModal('Lasa Gestão de Stocks e Entradas', 'O seu navegador não suporta a janela de escolha de destino. O download será feito para a pasta de Transferências.');
         fallbackDownload(state);
       }
     } catch (e: any) {
       if (e.name !== 'AbortError') {
         console.error('Erro ao transferir backup', e);
-        alert('Erro ao transferir o ficheiro de backup.');
+        showModal('Erro', 'Erro ao transferir o ficheiro de backup.');
       }
     }
   };
@@ -288,7 +300,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const hasPermission = await verifyAndRequestPermission(storedHandle);
       if (!hasPermission) {
-        alert('Aviso: Sem permissão de escrita. A gravação automática poderá não funcionar. Tente usar "Abrir Ficheiro Existente".');
+        showModal('Aviso', 'Aviso: Sem permissão de escrita. A gravação automática poderá não funcionar. Tente usar "Abrir Ficheiro Existente".');
       }
       const file = await storedHandle.getFile();
       const contents = await file.text();
@@ -306,7 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setFileHandle(storedHandle);
     } catch (e: any) {
       console.error('Erro ao abrir ficheiro guardado', e);
-      alert('Erro ao abrir a base de dados recente. O ficheiro pode ter sido movido, apagado, ou o browser bloqueou o acesso. Por favor, abra o ficheiro manualmente.');
+      showModal('Erro', 'Erro ao abrir a base de dados recente. O ficheiro pode ter sido movido, apagado, ou o browser bloqueou o acesso. Por favor, abra o ficheiro manualmente.');
       setStoredHandle(null);
       try { await set('lasa_db_handle', null); } catch(err) {}
     }
@@ -348,7 +360,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Request write permission immediately so auto-save works
           const hasPermission = await verifyAndRequestPermission(handle);
           if (!hasPermission) {
-            alert('Aviso: Como não deu permissão de escrita, as alterações não serão guardadas automaticamente no ficheiro. Terá de usar o botão "Transferir Backup".');
+            console.warn('Permissão de escrita negada');
           }
 
           const file = await handle.getFile();
@@ -364,7 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         contents = await file.text();
         handle = { isFallback: true, name: file.name };
         isFallback = true;
-        alert('Aviso: O seu navegador está a bloquear o acesso direto a ficheiros, o que impede a gravação automática. Use a opção "Transferir Backup" sempre que fizer alterações!');
+        console.warn('Acesso direto a ficheiros bloqueado, gravação automática inativa');
       }
       
       let parsed = { requests: [], items: [], deliveries: [] };
@@ -372,7 +384,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           parsed = JSON.parse(contents);
         } catch (err) {
-          alert('O ficheiro selecionado não é um JSON válido.');
+          showModal('Erro', 'O ficheiro selecionado não é um JSON válido.');
           return;
         }
       }
@@ -395,7 +407,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       if (e.name !== 'AbortError' && e.message !== 'Cancelado pelo utilizador') {
         console.error('Erro ao abrir ficheiro', e);
-        alert('Erro ao abrir ficheiro: ' + e.message);
+        showModal('Erro', 'Erro ao abrir ficheiro: ' + e.message);
       }
     }
   };
@@ -431,7 +443,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('File System Access API failed or blocked, falling back to memory...', err);
         handle = { isFallback: true, name: 'base_de_dados_lasa.json' };
         isFallback = true;
-        alert('Aviso: O seu navegador não suporta criação direta de ficheiros. A base de dados foi criada na memória. Por favor, transfira o backup no fim!');
+        showModal('Aviso', 'Aviso: O seu navegador não suporta criação direta de ficheiros. A base de dados foi criada na memória. Por favor, transfira o backup no fim!');
       }
       
       setState(initialState);
@@ -448,7 +460,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       if (e.name !== 'AbortError') {
         console.error('Erro ao criar ficheiro', e);
-        alert('Erro ao criar ficheiro: ' + e.message);
+        showModal('Erro', 'Erro ao criar ficheiro: ' + e.message);
       }
     }
   };
@@ -535,6 +547,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const toggleDarkMode = () => {
+    setState(prev => ({
+      ...prev,
+      darkMode: !prev.darkMode
+    }));
+  };
+
   const clearAll = async () => {
     setState({ requests: [], items: [], deliveries: [] });
   };
@@ -545,34 +564,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   if (!fileHandle) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-800">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold mb-6 text-slate-900">LASA - Gestão de Fios</h1>
-          <p className="text-slate-600 mb-8">
-            Para começar, por favor selecione a base de dados (ficheiro .json) ou crie uma nova.
-          </p>
-          <div className="flex flex-col gap-4">
-            <button 
-              onClick={handleOpenFile}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer shadow-sm"
-            >
-              Abrir Ficheiro Existente (.json)
-            </button>
-            <button 
-              onClick={handleNewFile}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer border border-slate-300 mt-2"
-            >
-              Criar Nova Base de Dados
-            </button>
+      <>
+        <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-800">
+          <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+            <h1 className="text-2xl font-bold mb-6 text-slate-900">LASA - Gestão de Fios</h1>
+            <p className="text-slate-600 mb-8">
+              Para começar, por favor selecione a base de dados (ficheiro .json) ou crie uma nova.
+            </p>
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={handleOpenFile}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer shadow-sm"
+              >
+                Abrir Ficheiro Existente (.json)
+              </button>
+              <button 
+                onClick={handleNewFile}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer border border-slate-300 mt-2"
+              >
+                Criar Nova Base de Dados
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        {modalConfig.isOpen && (
+          <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-zinc-800 text-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+              <h3 className="text-lg font-medium mb-3">{modalConfig.title}</h3>
+              <p className="text-zinc-300 mb-6 whitespace-pre-wrap">{modalConfig.message}</p>
+              <div className="flex justify-center gap-3">
+                {modalConfig.onConfirm && (
+                  <button onClick={hideModal} className="px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white font-medium transition-colors">
+                    Cancelar
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    if (modalConfig.onConfirm) modalConfig.onConfirm();
+                    hideModal();
+                  }} 
+                  className="px-6 py-2 rounded-lg bg-zinc-100 hover:bg-white text-zinc-900 font-medium transition-colors"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
   return (
-    <AppContext.Provider value={{ state, addRequest, addDelivery, updateDelivery, deleteDelivery, updateRequestItem, deleteRequest, toggleHighContrast, clearAll, importData, handleOpenFile, handleNewFile, saveToFile, downloadBackup, closeDatabase, memorizeFile, fileHandle, storedHandle }}>
+    <AppContext.Provider value={{ state, addRequest, addDelivery, updateDelivery, deleteDelivery, updateRequestItem, deleteRequest, toggleHighContrast, toggleDarkMode, clearAll, importData, handleOpenFile, handleNewFile, saveToFile, downloadBackup, closeDatabase, memorizeFile, fileHandle, storedHandle, showModal }}>
       {children}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-zinc-800 text-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 className="text-lg font-medium mb-3">{modalConfig.title}</h3>
+            <p className="text-zinc-300 mb-6 whitespace-pre-wrap">{modalConfig.message}</p>
+            <div className="flex justify-center gap-3">
+              {modalConfig.onConfirm && (
+                <button onClick={hideModal} className="px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white font-medium transition-colors">
+                  Cancelar
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  if (modalConfig.onConfirm) modalConfig.onConfirm();
+                  hideModal();
+                }} 
+                className="px-6 py-2 rounded-lg bg-zinc-100 hover:bg-white text-zinc-900 font-medium transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppContext.Provider>
   );
 };

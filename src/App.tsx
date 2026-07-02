@@ -27,7 +27,13 @@ function MainLayout() {
     } else {
       document.documentElement.classList.remove('high-contrast');
     }
-  }, [state.highContrast]);
+
+    if (state.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [state.highContrast, state.darkMode]);
 
   const renderPage = () => {
     if (currentPage === 'settings') return <Settings onClose={() => handleNavigate(previousPage)} />;
