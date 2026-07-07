@@ -3,34 +3,73 @@ import { useAppStore } from '../store';
 import { parseExcel, exportToExcel } from '../lib/excel';
 import { Upload, FileSpreadsheet, Trash2, ChevronDown, ChevronUp, FileUp, ChevronRight, PackagePlus, Download, Pencil, Search, X } from 'lucide-react';
 
-const isPastDate = (dateStr?: string) => {
-  if (!dateStr || dateStr === '-') return false;
-  
-  let d: Date | null = null;
+const parseCustomDate = (dateStr?: string): Date | null => {
+  if (!dateStr || dateStr === '-') return null;
   const str = dateStr.trim();
+  
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-');
+    return new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+  }
   
   const parts = str.split(/[\/\-]/);
   if (parts.length === 3) {
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    let year = parseInt(parts[2], 10);
-    if (year < 100) year += 2000;
-    
-    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-      d = new Date(year, month, day);
+    if (parts[0].length === 4) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return new Date(y, m, d);
+    } else {
+      let p0 = parseInt(parts[0], 10);
+      let p1 = parseInt(parts[1], 10);
+      let p2 = parts[2];
+      
+      let month = p0;
+      let day = p1;
+      
+      if (p0 > 12) {
+        day = p0;
+        month = p1;
+      }
+      
+      let year = parseInt(p2, 10);
+      if (year < 100) year += 2000;
+      
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month - 1, day);
+      }
     }
   }
   
-  if (!d || isNaN(d.getTime())) {
-    d = new Date(str);
-  }
+  const dObj = new Date(str);
+  if (!isNaN(dObj.getTime())) return dObj;
   
-  if (isNaN(d.getTime())) return false;
+  return null;
+};
+
+const isPastDate = (dateStr?: string) => {
+  const d = parseCustomDate(dateStr);
+  if (!d) return false;
   
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   
   return d.getTime() < now.getTime();
+};
+
+const formatShortDate = (dateStr?: string) => {
+  if (!dateStr || dateStr === '-') return '-';
+  
+  const dObj = parseCustomDate(dateStr);
+  if (dObj) {
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const yy = String(dObj.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+  
+  return dateStr;
 };
 
 export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
@@ -480,8 +519,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                         </td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap"><span className="truncate max-w-[150px] inline-block" title={item.description}>{item.description}</span></td>
                                         <td className="px-2 py-2 font-bold text-slate-700 whitespace-nowrap">{item.bobbins || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.requestedDate || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.dyeingDate || '-'}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatShortDate(item.requestedDate)}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatShortDate(item.dyeingDate)}</td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.weightPerBobbin || '-'}</td>
                                         <td className={`px-2 py-2 whitespace-nowrap font-medium ${itemDeliveries.some(d => d.status === 'bobinar_2_1') ? 'text-amber-500' : 'text-slate-600'}`}>
                                           {item.bobbin2To1 || '-'}
