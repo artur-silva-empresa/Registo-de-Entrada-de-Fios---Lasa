@@ -3,6 +3,50 @@ import { useAppStore } from '../store';
 import { parseExcel, exportToExcel } from '../lib/excel';
 import { Upload, FileSpreadsheet, Trash2, ChevronDown, ChevronUp, FileUp, ChevronRight, PackagePlus, Download, Pencil, Search, X } from 'lucide-react';
 
+const formatDateShort = (dateStr?: string) => {
+  if (!dateStr || dateStr === '-') return '-';
+  
+  let d: Date | null = null;
+  let str = dateStr.trim();
+  
+  // if it looks like an ISO date string
+  if (str.includes('T')) {
+    d = new Date(str);
+  } else {
+    // Try to parse dd/mm/yy or yyyy-mm-dd
+    const parts = str.split(/[\/\-]/);
+    if (parts.length === 3) {
+      let day, month, year;
+      // if first part is 4 digits, it's yyyy-mm-dd
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        day = parseInt(parts[2], 10);
+      } else {
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+      }
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        d = new Date(year, month, day);
+      }
+    }
+  }
+  
+  if (!d || isNaN(d.getTime())) {
+    d = new Date(str);
+  }
+  
+  if (isNaN(d.getTime())) return dateStr;
+  
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  
+  return `${dd}/${mm}/${yy}`;
+};
+
 const isPastDate = (dateStr?: string) => {
   if (!dateStr || dateStr === '-') return false;
   
@@ -49,12 +93,14 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
   const [deliveryNote, setDeliveryNote] = useState('');
   const [deliveryObservations, setDeliveryObservations] = useState('');
+  const [deliveryStatus, setDeliveryStatus] = useState<'entregue' | 'bobinar_2_1'>('entregue');
 
   const [editingDelivery, setEditingDelivery] = useState<any>(null);
   const [editDeliveryQuantity, setEditDeliveryQuantity] = useState('');
   const [editDeliveryDate, setEditDeliveryDate] = useState('');
   const [editDeliveryNote, setEditDeliveryNote] = useState('');
   const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
+  const [editDeliveryStatus, setEditDeliveryStatus] = useState<'entregue' | 'bobinar_2_1'>('entregue');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -74,6 +120,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const requestIds = new Set(allRequests.map(r => r.id));
   const allItems = state.items.filter(i => requestIds.has(i.requestId));
 
+  const isItemTramar = (item: any) => item.bobbin2To1 && String(item.bobbin2To1).trim() !== '' && String(item.bobbin2To1).trim() !== '-';
+
   const requests = allRequests.filter(request => {
     if (type === 'cru' && filterType !== 'all') {
       const isCertificado = /^\d{4}\s*-/.test(request.number);
@@ -81,9 +129,19 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
       if (filterType === 'normais' && isCertificado) return false;
     }
 
+    let requestItems = allItems.filter(i => i.requestId === request.id);
+
+    if (type === 'tinto' && filterType !== 'all') {
+      if (filterType === 'tramar') {
+        requestItems = requestItems.filter(isItemTramar);
+      } else if (filterType === 'urdir') {
+        requestItems = requestItems.filter(i => !isItemTramar(i));
+      }
+      if (requestItems.length === 0) return false;
+    }
+
     if (!searchTerm) return true;
     
-    const requestItems = allItems.filter(i => i.requestId === request.id);
     const searchLower = searchTerm.toLowerCase();
     
     return request.number.toLowerCase().includes(searchLower) ||
@@ -94,7 +152,14 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
            );
   });
   
-  const items = allItems.filter(i => requests.some(r => r.id === i.requestId));
+  const items = allItems.filter(i => {
+    if (!requests.some(r => r.id === i.requestId)) return false;
+    if (type === 'tinto' && filterType !== 'all') {
+      if (filterType === 'tramar') return isItemTramar(i);
+      if (filterType === 'urdir') return !isItemTramar(i);
+    }
+    return true;
+  });
   const itemIds = new Set(items.map(i => i.id));
   const deliveries = state.deliveries.filter(d => itemIds.has(d.itemId));
 
@@ -242,6 +307,17 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               <option value="normais">Pedidos Fios Normais</option>
             </select>
           )}
+          {type === 'tinto' && (
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-64"
+            >
+              <option value="all">Todos os Pedidos</option>
+              <option value="tramar">Fios para Tramar</option>
+              <option value="urdir">Fios para Urdir</option>
+            </select>
+          )}
         </div>
       </header>
 
@@ -320,7 +396,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                           {type === 'cru' ? 'Solicitação' : 'Pedido de Tingimento'} {request.number}
                         </h3>
                         <p className="text-sm text-slate-500 truncate">
-                          Data: {request.date.replace(/DE:.*/i, '').trim()} • Upload: {new Date(request.uploadDate).toLocaleDateString('pt-PT')}
+                          Data: {formatDateShort(request.date.replace(/DE:.*/i, '').trim())} • Upload: {formatDateShort(request.uploadDate)}
                         </p>
                         {type === 'tinto' && requestItems[0]?.observations && (
                           <p className="text-sm text-slate-600 mt-1 truncate" title={requestItems[0].observations}>
@@ -383,6 +459,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobines</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Pedida</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Tingimento</div></th>
+                                  <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Prazo Final</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Peso / Bob.</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobinar 2 p/ 1</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Quantidade (Kg)</div></th>
@@ -448,10 +525,13 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                         </td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap"><span className="truncate max-w-[150px] inline-block" title={item.description}>{item.description}</span></td>
                                         <td className="px-2 py-2 font-bold text-slate-700 whitespace-nowrap">{item.bobbins || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.requestedDate || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.dyeingDate || '-'}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.requestedDate)}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.dyeingDate)}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.deadlineDate)}</td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.weightPerBobbin || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.bobbin2To1 || '-'}</td>
+                                        <td className={`px-2 py-2 whitespace-nowrap font-medium ${itemDeliveries.some(d => d.status === 'bobinar_2_1') ? 'text-amber-500' : 'text-slate-600'}`}>
+                                          {item.bobbin2To1 || '-'}
+                                        </td>
                                         <td className="px-2 py-2 font-bold text-slate-700 whitespace-nowrap">
                                           {Number(item.quantity).toLocaleString('pt-PT')} {item.unit || 'Kg'}
                                         </td>
@@ -485,10 +565,10 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                               <div key={delivery.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 text-sm bg-white p-3 rounded-lg border border-slate-100 shadow-sm group">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1">
                                                   <div className="flex items-center gap-2 min-w-[140px]">
-                                                    <span className="font-bold text-emerald-600">{delivery.quantity} {item.unit || 'Kg'} entregues</span>
+                                                    <span className={`font-bold ${delivery.status === 'bobinar_2_1' ? 'text-amber-500' : 'text-emerald-600'}`}>{delivery.quantity} {item.unit || 'Kg'} {delivery.status === 'bobinar_2_1' ? 'em bobinagem' : 'entregues'}</span>
                                                     <span className="text-slate-400 text-xs">•</span>
                                                     <span className="text-slate-600">
-                                                      {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('pt-PT') : new Date(delivery.date).toLocaleDateString('pt-PT')}
+                                                      {delivery.deliveryDate ? formatDateShort(delivery.deliveryDate) : formatDateShort(delivery.date)}
                                                     </span>
                                                   </div>
                                                   {delivery.deliveryNote && (
@@ -505,13 +585,14 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                                 <button
                                                   onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setEditingDelivery({ ...delivery, itemDescription: item.description, itemSection: item.section, itemUnit: item.unit });
+                                                    setEditingDelivery({ ...delivery, itemDescription: item.description, itemSection: item.section, itemUnit: item.unit, originalItem: item });
                                                     setEditDeliveryQuantity(delivery.quantity.toString());
                                                     setEditDeliveryDate(delivery.deliveryDate ? delivery.deliveryDate.split('T')[0] : delivery.date.split('T')[0]);
                                                     setEditDeliveryNote(delivery.deliveryNote || '');
                                                     setEditDeliveryObservations(delivery.observations || '');
+                                                    setEditDeliveryStatus(delivery.status || 'entregue');
                                                   }}
-                                                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-100"
                                                   title="Editar Entrega"
                                                 >
                                                   <Pencil className="w-4 h-4" />
@@ -521,7 +602,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                                     e.stopPropagation();
                                                     setDeliveryToDelete(delivery.id);
                                                   }}
-                                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-100"
                                                   title="Apagar Entrega"
                                                 >
                                                   <Trash2 className="w-4 h-4" />
@@ -623,7 +704,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="number"
                   value={deliveryQuantity}
                   onChange={(e) => setDeliveryQuantity(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   min="1"
                 />
               </div>
@@ -634,7 +715,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="date"
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -644,7 +725,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="text"
                   value={deliveryNote}
                   onChange={(e) => setDeliveryNote(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   placeholder="Nº da guia"
                 />
               </div>
@@ -654,11 +735,25 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 <textarea
                   value={deliveryObservations}
                   onChange={(e) => setDeliveryObservations(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   rows={2}
                   placeholder="Notas adicionais"
                 />
               </div>
+
+              {type === 'tinto' && isItemTramar(selectedItemForDelivery) && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
+                  <select
+                    value={deliveryStatus}
+                    onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
+                    className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="bobinar_2_1">Em processo de bobinagem</option>
+                    <option value="entregue">Fio entregue</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -667,6 +762,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   setSelectedItemForDelivery(null);
                   setDeliveryNote('');
                   setDeliveryObservations('');
+                  setDeliveryStatus('entregue');
                 }}
                 className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-medium rounded-lg transition-colors"
               >
@@ -680,11 +776,13 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                       Number(deliveryQuantity),
                       deliveryNote,
                       deliveryDate,
-                      deliveryObservations
+                      deliveryObservations,
+                      deliveryStatus
                     );
                     setSelectedItemForDelivery(null);
                     setDeliveryNote('');
                     setDeliveryObservations('');
+                    setDeliveryStatus('entregue');
                   }
                 }}
                 disabled={!deliveryQuantity || Number(deliveryQuantity) <= 0}
@@ -716,7 +814,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="number"
                   value={editDeliveryQuantity}
                   onChange={(e) => setEditDeliveryQuantity(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="1"
                 />
               </div>
@@ -727,7 +825,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="date"
                   value={editDeliveryDate}
                   onChange={(e) => setEditDeliveryDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -737,7 +835,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   type="text"
                   value={editDeliveryNote}
                   onChange={(e) => setEditDeliveryNote(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Nº da guia"
                 />
               </div>
@@ -747,11 +845,25 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 <textarea
                   value={editDeliveryObservations}
                   onChange={(e) => setEditDeliveryObservations(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   rows={2}
                   placeholder="Notas adicionais"
                 />
               </div>
+
+              {type === 'tinto' && editingDelivery?.originalItem && isItemTramar(editingDelivery.originalItem) && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
+                  <select
+                    value={editDeliveryStatus}
+                    onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
+                    className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="bobinar_2_1">Em processo de bobinagem</option>
+                    <option value="entregue">Fio entregue</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -768,7 +880,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                       quantity: Number(editDeliveryQuantity),
                       deliveryDate: editDeliveryDate,
                       deliveryNote: editDeliveryNote,
-                      observations: editDeliveryObservations
+                      observations: editDeliveryObservations,
+                      status: editDeliveryStatus
                     });
                     setEditingDelivery(null);
                   }

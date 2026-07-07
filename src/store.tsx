@@ -13,6 +13,7 @@ export type RequestItem = {
   bobbins?: number;
   requestedDate?: string;
   dyeingDate?: string;
+  deadlineDate?: string;
   weightPerBobbin?: string;
   bobbin2To1?: string;
 };
@@ -33,6 +34,7 @@ export type Delivery = {
   deliveryNote?: string;
   deliveryDate?: string;
   observations?: string;
+  status?: 'entregue' | 'bobinar_2_1';
 };
 
 type AppState = {
@@ -46,7 +48,7 @@ type AppState = {
 type AppContextType = {
   state: AppState;
   addRequest: (request: Omit<Request, 'id' | 'uploadDate'>, items: Omit<RequestItem, 'id' | 'requestId'>[]) => void;
-  addDelivery: (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string) => void;
+  addDelivery: (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1') => void;
   updateDelivery: (id: string, updates: Partial<Delivery>) => void;
   deleteDelivery: (id: string) => void;
   updateRequestItem: (itemId: string, updates: Partial<Omit<RequestItem, 'id' | 'requestId'>>) => void;
@@ -470,27 +472,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addRequest = async (req: Omit<Request, 'id' | 'uploadDate'>, newItems: Omit<RequestItem, 'id' | 'requestId'>[]) => {
-    const requestId = crypto.randomUUID();
-    const request: Request = {
-      ...req,
-      id: requestId,
-      uploadDate: new Date().toISOString(),
-    };
+    setState(prev => {
+      // Check if request already exists
+      const existingRequestIndex = prev.requests.findIndex(r => r.number === req.number && r.type === req.type);
 
-    const items: RequestItem[] = newItems.map(item => ({
-      ...item,
-      id: crypto.randomUUID(),
-      requestId,
-    }));
+      if (existingRequestIndex !== -1) {
+        const existingRequest = prev.requests[existingRequestIndex];
+        
+        // Update items based on description and color (or fallback to position if possible)
+        const updatedItems = prev.items.map(existingItem => {
+          if (existingItem.requestId === existingRequest.id) {
+            // Find corresponding new item
+            const matchingNewItem = newItems.find(ni => 
+              ni.description === existingItem.description && 
+              ni.coneColor === existingItem.coneColor
+            );
+            
+            if (matchingNewItem) {
+              return {
+                ...existingItem,
+                dyeingDate: matchingNewItem.dyeingDate || existingItem.dyeingDate,
+                deadlineDate: matchingNewItem.deadlineDate || existingItem.deadlineDate,
+              };
+            }
+          }
+          return existingItem;
+        });
 
-    setState(prev => ({
-      ...prev,
-      requests: [request, ...prev.requests],
-      items: [...prev.items, ...items],
-    }));
+        // Add any items from newItems that don't exist yet
+        const itemsToAdd = newItems.filter(ni => 
+          !prev.items.some(existingItem => 
+            existingItem.requestId === existingRequest.id && 
+            existingItem.description === ni.description && 
+            existingItem.coneColor === ni.coneColor
+          )
+        ).map(item => ({
+          ...item,
+          id: crypto.randomUUID(),
+          requestId: existingRequest.id,
+        }));
+
+        return {
+          ...prev,
+          items: [...updatedItems, ...itemsToAdd],
+        };
+      }
+
+      const requestId = crypto.randomUUID();
+      const request: Request = {
+        ...req,
+        id: requestId,
+        uploadDate: new Date().toISOString(),
+      };
+
+      const items: RequestItem[] = newItems.map(item => ({
+        ...item,
+        id: crypto.randomUUID(),
+        requestId,
+      }));
+
+      return {
+        ...prev,
+        requests: [request, ...prev.requests],
+        items: [...prev.items, ...items],
+      };
+    });
   };
 
-  const addDelivery = async (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string) => {
+  const addDelivery = async (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1') => {
     const delivery: Delivery = {
       id: crypto.randomUUID(),
       itemId,
@@ -499,6 +548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deliveryNote,
       deliveryDate,
       observations,
+      status,
     };
 
     setState(prev => ({
