@@ -151,7 +151,6 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
           let currentCor = '';
           let currentDataPedida = '';
           let currentDataTingimento = '';
-          let currentPrazoFinal = '';
           let currentPesoStr = '';
           const items = [];
           
@@ -161,7 +160,6 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
             bobines: -1,
             dataPedida: -1,
             dataTingimento: -1,
-            prazoFinal: -1,
             peso: -1,
             bobinar: -1
           };
@@ -219,7 +217,6 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
                     else if (h.includes('bobines') || h.includes('bobinas')) colIdx.bobines = j;
                     else if (h.includes('data pedida')) colIdx.dataPedida = j;
                     else if (h.includes('data tingimento') || h.includes('tingimento')) colIdx.dataTingimento = j;
-                    else if (h.includes('prazo final') || h.includes('prazo')) colIdx.prazoFinal = j;
                     else if (h.includes('peso')) colIdx.peso = j;
                     else if (h.includes('bobinar')) colIdx.bobinar = j;
                   }
@@ -232,9 +229,8 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
                 if (colIdx.bobines === -1) colIdx.bobines = firstCol + 2;
                 if (colIdx.dataPedida === -1) colIdx.dataPedida = firstCol + 3;
                 if (colIdx.dataTingimento === -1) colIdx.dataTingimento = firstCol + 4;
-                if (colIdx.prazoFinal === -1) colIdx.prazoFinal = firstCol + 5;
-                if (colIdx.peso === -1) colIdx.peso = firstCol + 6;
-                if (colIdx.bobinar === -1) colIdx.bobinar = firstCol + 7;
+                if (colIdx.peso === -1) colIdx.peso = firstCol + 5;
+                if (colIdx.bobinar === -1) colIdx.bobinar = firstCol + 6;
                 
                 continue;
               }
@@ -254,9 +250,6 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
               }
               if (colIdx.dataTingimento >= 0 && row[colIdx.dataTingimento] && String(row[colIdx.dataTingimento]).trim() !== '') {
                 currentDataTingimento = String(row[colIdx.dataTingimento]).trim().replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
-              }
-              if (colIdx.prazoFinal >= 0 && row[colIdx.prazoFinal] && String(row[colIdx.prazoFinal]).trim() !== '') {
-                currentPrazoFinal = String(row[colIdx.prazoFinal]).trim().replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
               }
               if (colIdx.peso >= 0 && row[colIdx.peso] && String(row[colIdx.peso]).trim() !== '') {
                 currentPesoStr = String(row[colIdx.peso]).trim().replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
@@ -290,7 +283,6 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
                     bobbins: bobbins,
                     requestedDate: currentDataPedida,
                     dyeingDate: currentDataTingimento,
-                    deadlineDate: currentPrazoFinal,
                     weightPerBobbin: currentPesoStr,
                     bobbin2To1: colIdx.bobinar >= 0 && row[colIdx.bobinar] ? String(row[colIdx.bobinar]).trim() : ''
                   });

@@ -3,50 +3,6 @@ import { useAppStore } from '../store';
 import { parseExcel, exportToExcel } from '../lib/excel';
 import { Upload, FileSpreadsheet, Trash2, ChevronDown, ChevronUp, FileUp, ChevronRight, PackagePlus, Download, Pencil, Search, X } from 'lucide-react';
 
-const formatDateShort = (dateStr?: string) => {
-  if (!dateStr || dateStr === '-') return '-';
-  
-  let d: Date | null = null;
-  let str = dateStr.trim();
-  
-  // if it looks like an ISO date string
-  if (str.includes('T')) {
-    d = new Date(str);
-  } else {
-    // Try to parse dd/mm/yy or yyyy-mm-dd
-    const parts = str.split(/[\/\-]/);
-    if (parts.length === 3) {
-      let day, month, year;
-      // if first part is 4 digits, it's yyyy-mm-dd
-      if (parts[0].length === 4) {
-        year = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        day = parseInt(parts[2], 10);
-      } else {
-        day = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        year = parseInt(parts[2], 10);
-        if (year < 100) year += 2000;
-      }
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        d = new Date(year, month, day);
-      }
-    }
-  }
-  
-  if (!d || isNaN(d.getTime())) {
-    d = new Date(str);
-  }
-  
-  if (isNaN(d.getTime())) return dateStr;
-  
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = String(d.getFullYear()).slice(-2);
-  
-  return `${dd}/${mm}/${yy}`;
-};
-
 const isPastDate = (dateStr?: string) => {
   if (!dateStr || dateStr === '-') return false;
   
@@ -302,9 +258,9 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-64"
             >
-              <option value="all">Todos os Pedidos</option>
-              <option value="certificados">Pedidos Fios Certificados</option>
-              <option value="normais">Pedidos Fios Normais</option>
+              <option value="all" className="bg-white text-slate-900">Todos os Pedidos</option>
+              <option value="certificados" className="bg-white text-slate-900">Pedidos Fios Certificados</option>
+              <option value="normais" className="bg-white text-slate-900">Pedidos Fios Normais</option>
             </select>
           )}
           {type === 'tinto' && (
@@ -313,9 +269,9 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-64"
             >
-              <option value="all">Todos os Pedidos</option>
-              <option value="tramar">Fios para Tramar</option>
-              <option value="urdir">Fios para Urdir</option>
+              <option value="all" className="bg-white text-slate-900">Todos os Pedidos</option>
+              <option value="tramar" className="bg-white text-slate-900">Fios para Tramar</option>
+              <option value="urdir" className="bg-white text-slate-900">Fios para Urdir</option>
             </select>
           )}
         </div>
@@ -396,7 +352,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                           {type === 'cru' ? 'Solicitação' : 'Pedido de Tingimento'} {request.number}
                         </h3>
                         <p className="text-sm text-slate-500 truncate">
-                          Data: {formatDateShort(request.date.replace(/DE:.*/i, '').trim())} • Upload: {formatDateShort(request.uploadDate)}
+                          Data: {request.date.replace(/DE:.*/i, '').trim()} • Upload: {new Date(request.uploadDate).toLocaleDateString('pt-PT')}
                         </p>
                         {type === 'tinto' && requestItems[0]?.observations && (
                           <p className="text-sm text-slate-600 mt-1 truncate" title={requestItems[0].observations}>
@@ -459,7 +415,6 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobines</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Pedida</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Tingimento</div></th>
-                                  <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Prazo Final</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Peso / Bob.</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobinar 2 p/ 1</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Quantidade (Kg)</div></th>
@@ -525,9 +480,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                         </td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap"><span className="truncate max-w-[150px] inline-block" title={item.description}>{item.description}</span></td>
                                         <td className="px-2 py-2 font-bold text-slate-700 whitespace-nowrap">{item.bobbins || '-'}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.requestedDate)}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.dyeingDate)}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatDateShort(item.deadlineDate)}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.requestedDate || '-'}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.dyeingDate || '-'}</td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.weightPerBobbin || '-'}</td>
                                         <td className={`px-2 py-2 whitespace-nowrap font-medium ${itemDeliveries.some(d => d.status === 'bobinar_2_1') ? 'text-amber-500' : 'text-slate-600'}`}>
                                           {item.bobbin2To1 || '-'}
@@ -568,7 +522,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                                     <span className={`font-bold ${delivery.status === 'bobinar_2_1' ? 'text-amber-500' : 'text-emerald-600'}`}>{delivery.quantity} {item.unit || 'Kg'} {delivery.status === 'bobinar_2_1' ? 'em bobinagem' : 'entregues'}</span>
                                                     <span className="text-slate-400 text-xs">•</span>
                                                     <span className="text-slate-600">
-                                                      {delivery.deliveryDate ? formatDateShort(delivery.deliveryDate) : formatDateShort(delivery.date)}
+                                                      {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('pt-PT') : new Date(delivery.date).toLocaleDateString('pt-PT')}
                                                     </span>
                                                   </div>
                                                   {delivery.deliveryNote && (
@@ -749,8 +703,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                     onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
                     className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="bobinar_2_1">Em processo de bobinagem</option>
-                    <option value="entregue">Fio entregue</option>
+                    <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
+                    <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
                   </select>
                 </div>
               )}
@@ -859,8 +813,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                     onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
                     className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="bobinar_2_1">Em processo de bobinagem</option>
-                    <option value="entregue">Fio entregue</option>
+                    <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
+                    <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
                   </select>
                 </div>
               )}
