@@ -13,6 +13,7 @@ export type RequestItem = {
   bobbins?: number;
   requestedDate?: string;
   dyeingDate?: string;
+  deadline?: string;
   weightPerBobbin?: string;
   bobbin2To1?: string;
 };
@@ -42,6 +43,7 @@ type AppState = {
   deliveries: Delivery[];
   highContrast?: boolean;
   darkMode?: boolean;
+  lastInlineEditAt?: string;
 };
 
 type AppContextType = {
@@ -471,24 +473,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addRequest = async (req: Omit<Request, 'id' | 'uploadDate'>, newItems: Omit<RequestItem, 'id' | 'requestId'>[]) => {
-    const requestId = crypto.randomUUID();
-    const request: Request = {
-      ...req,
-      id: requestId,
-      uploadDate: new Date().toISOString(),
-    };
+    setState(prev => {
+      // Find existing request by number and type
+      const existingRequest = prev.requests.find(r => r.number === req.number && r.type === req.type);
 
-    const items: RequestItem[] = newItems.map(item => ({
-      ...item,
-      id: crypto.randomUUID(),
-      requestId,
-    }));
+      if (existingRequest) {
+        // Merge items
+        let updatedItems = [...prev.items];
+        
+        newItems.forEach(newItem => {
+          // Try to find matching item by description and coneColor
+          const existingItemIndex = updatedItems.findIndex(
+            i => i.requestId === existingRequest.id && 
+                 i.description === newItem.description && 
+                 i.coneColor === newItem.coneColor &&
+                 i.section === newItem.section
+          );
 
-    setState(prev => ({
-      ...prev,
-      requests: [request, ...prev.requests],
-      items: [...prev.items, ...items],
-    }));
+          if (existingItemIndex >= 0) {
+            // Update existing item with new data (e.g. deadline, dyeingDate)
+            updatedItems[existingItemIndex] = {
+              ...updatedItems[existingItemIndex],
+              ...newItem,
+              id: updatedItems[existingItemIndex].id, // keep original id
+              requestId: existingRequest.id, // keep original requestId
+            };
+          } else {
+            // Add as new item
+            updatedItems.push({
+              ...newItem,
+              id: crypto.randomUUID(),
+              requestId: existingRequest.id,
+            });
+          }
+        });
+
+        // Optionally update the request's uploadDate or other fields if needed
+        const updatedRequests = prev.requests.map(r => 
+          r.id === existingRequest.id ? { ...r, date: req.date } : r
+        );
+
+        return {
+          ...prev,
+          requests: updatedRequests,
+          items: updatedItems,
+        };
+      }
+
+      // If no existing request, create new
+      const requestId = crypto.randomUUID();
+      const request: Request = {
+        ...req,
+        id: requestId,
+        uploadDate: new Date().toISOString(),
+      };
+
+      const items: RequestItem[] = newItems.map(item => ({
+        ...item,
+        id: crypto.randomUUID(),
+        requestId,
+      }));
+
+      return {
+        ...prev,
+        requests: [request, ...prev.requests],
+        items: [...prev.items, ...items],
+      };
+    });
   };
 
   const addDelivery = async (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1') => {
@@ -528,6 +579,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateRequestItem = (itemId: string, updates: Partial<Omit<RequestItem, 'id' | 'requestId'>>) => {
     setState(prev => ({
       ...prev,
+      lastInlineEditAt: new Date().toISOString(),
       items: prev.items.map(item => 
         item.id === itemId ? { ...item, ...updates } : item
       )

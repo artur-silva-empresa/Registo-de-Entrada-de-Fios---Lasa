@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, FileSpreadsheet, PackageCheck, Package, BarChart3, AlertTriangle, Settings, Save, Download, LogOut, ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen, Eye, Moon, Sun } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, isPastDate } from '../lib/utils';
 import { useAppStore } from '../store';
 
 type SidebarProps = {
@@ -13,6 +13,17 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const [expandedSection, setExpandedSection] = useState<'cru' | 'tinto' | null>(currentPage.startsWith('tinto') ? 'tinto' : 'cru');
   const [isCollapsed, setIsCollapsed] = useState(true);
   
+  // Calculate atraso count
+  const delayedTintoItemsCount = state.items.filter(i => {
+    const request = state.requests.find(r => r.id === i.requestId);
+    if (!request || request.type !== 'tinto') return false;
+    
+    const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    const isCompleted = delivered >= Number(i.quantity);
+    
+    return !isCompleted && isPastDate(i.deadline);
+  }).length;
+
   const cruItems = [
     { id: 'cru_dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cru_pedidos', label: 'Pedidos de Fio', icon: FileSpreadsheet },
@@ -24,7 +35,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   const tintoItems = [
     { id: 'tinto_dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tinto_pedidos', label: 'Pedidos de Tingimento', icon: FileSpreadsheet },
+    { id: 'tinto_pedidos', label: 'Pedidos de Tingimento', icon: FileSpreadsheet, badge: delayedTintoItemsCount > 0 ? delayedTintoItemsCount : undefined },
     { id: 'tinto_entradas', label: 'Entradas (Receção)', icon: PackageCheck },
     { id: 'tinto_entregas', label: 'Histórico de Entregas', icon: Package },
     { id: 'tinto_stock', label: 'Stock / Faltas', icon: BarChart3 },
@@ -189,14 +200,21 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                           key={item.id}
                           onClick={() => onNavigate(item.id)}
                           className={cn(
-                            "w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors text-left",
+                            "w-full flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors text-left",
                             isActive 
                               ? "bg-slate-50 text-slate-900" 
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           )}
                         >
-                          <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
-                          <span className="truncate">{item.label}</span>
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
+                            <span className="truncate">{item.label}</span>
+                          </div>
+                          {item.badge !== undefined && (
+                            <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold shrink-0 ml-2">
+                              {item.badge}
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -220,14 +238,21 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                       key={item.id}
                       onClick={() => onNavigate(item.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                        "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                         isActive 
                           ? "bg-slate-100 text-slate-900" 
                           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       )}
                     >
-                      <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
-                      <span className="truncate">{item.label}</span>
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {item.badge !== undefined && (
+                        <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold shrink-0 ml-2">
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

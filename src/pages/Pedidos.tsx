@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { parseExcel, exportToExcel } from '../lib/excel';
 import { Upload, FileSpreadsheet, Trash2, ChevronDown, ChevronUp, FileUp, ChevronRight, PackagePlus, Download, Pencil, Search, X } from 'lucide-react';
 
-const parseCustomDate = (dateStr?: string): Date | null => {
+const parseCustomDateLocal = (dateStr?: string): Date | null => {
   if (!dateStr || dateStr === '-') return null;
   const str = dateStr.trim();
   
@@ -49,7 +49,7 @@ const parseCustomDate = (dateStr?: string): Date | null => {
 };
 
 const isPastDate = (dateStr?: string) => {
-  const d = parseCustomDate(dateStr);
+  const d = parseCustomDateLocal(dateStr);
   if (!d) return false;
   
   const now = new Date();
@@ -61,7 +61,7 @@ const isPastDate = (dateStr?: string) => {
 const formatShortDate = (dateStr?: string) => {
   if (!dateStr || dateStr === '-') return '-';
   
-  const dObj = parseCustomDate(dateStr);
+  const dObj = parseCustomDateLocal(dateStr);
   if (dObj) {
     const dd = String(dObj.getDate()).padStart(2, '0');
     const mm = String(dObj.getMonth() + 1).padStart(2, '0');
@@ -72,8 +72,19 @@ const formatShortDate = (dateStr?: string) => {
   return dateStr;
 };
 
+const toInputDateValue = (dateStr?: string) => {
+  const dObj = parseCustomDateLocal(dateStr);
+  if (dObj) {
+    const yyyy = dObj.getFullYear();
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return '';
+};
+
 export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
-  const { state, addRequest, deleteRequest, addDelivery, updateDelivery, deleteDelivery } = useAppStore();
+  const { state, addRequest, deleteRequest, addDelivery, updateDelivery, deleteDelivery, updateRequestItem } = useAppStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
@@ -97,8 +108,30 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
   const [editDeliveryStatus, setEditDeliveryStatus] = useState<'entregue' | 'bobinar_2_1'>('entregue');
 
+  const [editingItemField, setEditingItemField] = useState<{ id: string, field: 'dyeingDate' | 'deadline' } | null>(null);
+  const [editingItemValue, setEditingItemValue] = useState('');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+
+  const startEditingItem = (item: any, field: 'dyeingDate' | 'deadline') => {
+    setEditingItemField({ id: item.id, field });
+    setEditingItemValue(toInputDateValue(item[field]));
+  };
+
+  const saveEditingItem = (id: string, field: 'dyeingDate' | 'deadline') => {
+    if (editingItemField?.id === id && editingItemField.field === field) {
+      let valToSave = editingItemValue;
+      if (valToSave) {
+        const [y, m, d] = valToSave.split('-');
+        if (y && m && d) {
+           valToSave = `${d}/${m}/${y.slice(-2)}`;
+        }
+      }
+      updateRequestItem(id, { [field]: valToSave });
+      setEditingItemField(null);
+    }
+  };
 
   const allRequests = state.requests
     .filter(r => (r.type || 'cru') === type)
@@ -131,6 +164,12 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
         requestItems = requestItems.filter(isItemTramar);
       } else if (filterType === 'urdir') {
         requestItems = requestItems.filter(i => !isItemTramar(i));
+      } else if (filterType === 'atraso') {
+        requestItems = requestItems.filter(i => {
+          const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+          const isCompleted = delivered >= Number(i.quantity);
+          return !isCompleted && isPastDate(i.deadline);
+        });
       }
       if (requestItems.length === 0) return false;
     }
@@ -152,6 +191,11 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
     if (type === 'tinto' && filterType !== 'all') {
       if (filterType === 'tramar') return isItemTramar(i);
       if (filterType === 'urdir') return !isItemTramar(i);
+      if (filterType === 'atraso') {
+        const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+        const isCompleted = delivered >= Number(i.quantity);
+        return !isCompleted && isPastDate(i.deadline);
+      }
     }
     return true;
   });
@@ -311,10 +355,20 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               <option value="all" className="bg-white text-slate-900">Todos os Pedidos</option>
               <option value="tramar" className="bg-white text-slate-900">Fios para Tramar</option>
               <option value="urdir" className="bg-white text-slate-900">Fios para Urdir</option>
+              <option value="atraso" className="bg-white text-slate-900">Em Atraso</option>
             </select>
           )}
         </div>
       </header>
+
+      {state.lastInlineEditAt && (
+        <div className="mb-4 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg flex items-center gap-2">
+          <Pencil className="w-3 h-3 text-slate-400" />
+          <span>
+            <strong>Auditoria:</strong> Última modificação na tabela efetuada a {new Date(state.lastInlineEditAt).toLocaleString('pt-PT')}
+          </span>
+        </div>
+      )}
 
       {uploadError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative">
@@ -454,6 +508,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobines</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Pedida</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Data Tingimento</div></th>
+                                  <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Prazo Final</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Peso / Bob.</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Bobinar 2 p/ 1</div></th>
                                   <th className="px-2 py-2"><div className="resize-x overflow-auto min-w-[60px] pb-1">Quantidade (Kg)</div></th>
@@ -474,7 +529,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                               const isItemExpanded = expandedItems.has(item.id);
                               
                               const isCompleted = delivered >= Number(item.quantity);
-                              const isDyeingDelayed = type === 'tinto' && !isCompleted && isPastDate(item.dyeingDate);
+                              const isDeadlineDelayed = type === 'tinto' && !isCompleted && isPastDate(item.deadline);
                               
                               const sortedDeliveries = [...itemDeliveries].sort((a, b) => {
                                 const dateA = new Date(a.deliveryDate || a.date).getTime();
@@ -485,7 +540,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                               return (
                                 <React.Fragment key={item.id}>
                                   <tr 
-                                    className={`${isDyeingDelayed ? 'bg-red-50' : 'bg-white'} ${hasDeliveries ? `cursor-pointer ${isDyeingDelayed ? 'hover:bg-red-100' : 'hover:bg-slate-50'} transition-colors` : ''}`}
+                                    className={`${isDeadlineDelayed ? 'bg-red-50' : 'bg-white'} ${hasDeliveries ? `cursor-pointer ${isDeadlineDelayed ? 'hover:bg-red-100' : 'hover:bg-slate-50'} transition-colors` : ''}`}
                                     onClick={() => hasDeliveries && toggleItem(item.id)}
                                   >
                                     {type === 'cru' ? (
@@ -520,7 +575,50 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap"><span className="truncate max-w-[150px] inline-block" title={item.description}>{item.description}</span></td>
                                         <td className="px-2 py-2 font-bold text-slate-700 whitespace-nowrap">{item.bobbins || '-'}</td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatShortDate(item.requestedDate)}</td>
-                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{formatShortDate(item.dyeingDate)}</td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap group hover:bg-slate-50 cursor-pointer" onClick={(e) => { e.stopPropagation(); startEditingItem(item, 'dyeingDate'); }}>
+                                          {editingItemField?.id === item.id && editingItemField?.field === 'dyeingDate' ? (
+                                            <input
+                                              type="date"
+                                              autoFocus
+                                              value={editingItemValue}
+                                              onChange={(e) => setEditingItemValue(e.target.value)}
+                                              onBlur={() => saveEditingItem(item.id, 'dyeingDate')}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') saveEditingItem(item.id, 'dyeingDate');
+                                                if (e.key === 'Escape') setEditingItemField(null);
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="px-1 py-0.5 border border-red-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500 text-xs w-[110px]"
+                                            />
+                                          ) : (
+                                            <div className="flex items-center justify-between min-w-[70px]">
+                                              <span>{formatShortDate(item.dyeingDate)}</span>
+                                              <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td className="px-2 py-2 text-slate-600 whitespace-nowrap group hover:bg-slate-50 cursor-pointer" onClick={(e) => { e.stopPropagation(); startEditingItem(item, 'deadline'); }}>
+                                          {editingItemField?.id === item.id && editingItemField?.field === 'deadline' ? (
+                                            <input
+                                              type="date"
+                                              autoFocus
+                                              value={editingItemValue}
+                                              onChange={(e) => setEditingItemValue(e.target.value)}
+                                              onBlur={() => saveEditingItem(item.id, 'deadline')}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') saveEditingItem(item.id, 'deadline');
+                                                if (e.key === 'Escape') setEditingItemField(null);
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="px-1 py-0.5 border border-red-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500 text-xs w-[110px]"
+                                            />
+                                          ) : (
+                                            <div className="flex items-center justify-between min-w-[70px]">
+                                              <span>{formatShortDate(item.deadline)}</span>
+                                              <Pencil className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                            </div>
+                                          )}
+                                        </td>
                                         <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{item.weightPerBobbin || '-'}</td>
                                         <td className={`px-2 py-2 whitespace-nowrap font-medium ${itemDeliveries.some(d => d.status === 'bobinar_2_1') ? 'text-amber-500' : 'text-slate-600'}`}>
                                           {item.bobbin2To1 || '-'}
