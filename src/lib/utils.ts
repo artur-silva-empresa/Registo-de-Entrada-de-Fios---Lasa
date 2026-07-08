@@ -59,3 +59,17 @@ export const isPastDate = (dateStr?: string) => {
   
   return d.getTime() < now.getTime();
 };
+
+export const formatShortDate = (dateStr?: string) => {
+  if (!dateStr || dateStr === '-') return '';
+  
+  const dObj = parseCustomDate(dateStr);
+  if (dObj) {
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const yy = String(dObj.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+  
+  return dateStr;
+};

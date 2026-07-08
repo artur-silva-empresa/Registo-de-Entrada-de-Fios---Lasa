@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Request, RequestItem, Delivery } from '../store';
+import { formatShortDate } from './utils';
 
 export type ParsedRequest = {
   number: string;
@@ -37,20 +38,31 @@ export const exportToExcel = (requests: Request[], items: RequestItem[], deliver
 
     const deliveredTotal = itemDeliveries.reduce((sum, d) => sum + Number(d.quantity || 0), 0);
     const finalPending = Number(item.quantity || 0) - deliveredTotal;
+    const isTinto = request?.type === 'tinto';
+    const isTramar = isTinto ? (item.bobbin2To1 && String(item.bobbin2To1).trim() !== '' && String(item.bobbin2To1).trim() !== '-') : false;
+    const destinoLabel = isTinto ? (isTramar ? 'Fio para Tramar' : 'Fio para Urdir') : item.section;
 
     if (itemDeliveries.length === 0) {
-      exportData.push({
-        'Número do pedido': request?.number || 'N/A',
-        'Descrição de Fio': item.description,
-        'Destino': item.section,
-        'Solicitado': `${Number(item.quantity || 0)} ${item.unit || 'Kg'}`,
-        'Em falta': finalPending > 0 ? `${finalPending} ${item.unit || 'Kg'}` : '0',
-        'Estado': 'Pendente',
-        'Quantidade entregue': '0',
-        'Guia de Remessa': '',
-        'Data da entrega': '',
-        'Observações': ''
-      });
+      const row: any = {
+        'Número do pedido': request?.number || 'N/A'
+      };
+      if (isTinto) {
+        row['Cor'] = item.coneColor || '';
+      }
+      row['Descrição de Fio'] = item.description;
+      row['Destino'] = destinoLabel;
+      row['Solicitado'] = `${Number(item.quantity || 0)} ${item.unit || 'Kg'}`;
+      row['Em falta'] = finalPending > 0 ? `${finalPending} ${item.unit || 'Kg'}` : '0';
+      if (isTinto) {
+        row['Data Pedida'] = formatShortDate(item.requestedDate);
+        row['Prazo Final'] = formatShortDate(item.deadline);
+      }
+      row['Estado'] = 'Pendente';
+      row['Quantidade entregue'] = '0';
+      row['Guia de Remessa'] = '';
+      row['Data da entrega'] = '';
+      row['Observações'] = '';
+      exportData.push(row);
     } else {
       let runningDelivered = 0;
       itemDeliveries.forEach(d => {
@@ -62,38 +74,43 @@ export const exportToExcel = (requests: Request[], items: RequestItem[], deliver
         else if (runningDelivered > 0) rowStatus = 'Parcial';
 
         const date = new Date(d.deliveryDate || d.date).toLocaleDateString('pt-PT');
-        exportData.push({
-          'Número do pedido': request?.number || 'N/A',
-          'Descrição de Fio': item.description,
-          'Destino': item.section,
-          'Solicitado': `${Number(item.quantity || 0)} ${item.unit || 'Kg'}`,
-          'Em falta': pendingAtDelivery > 0 ? `${pendingAtDelivery} ${item.unit || 'Kg'}` : '0',
-          'Estado': rowStatus,
-          'Quantidade entregue': `${d.quantity} ${item.unit || 'Kg'}`,
-          'Guia de Remessa': d.deliveryNote || '',
-          'Data da entrega': date,
-          'Observações': d.observations || ''
-        });
+        const row: any = {
+          'Número do pedido': request?.number || 'N/A'
+        };
+        if (isTinto) {
+          row['Cor'] = item.coneColor || '';
+        }
+        row['Descrição de Fio'] = item.description;
+        row['Destino'] = destinoLabel;
+        row['Solicitado'] = `${Number(item.quantity || 0)} ${item.unit || 'Kg'}`;
+        row['Em falta'] = pendingAtDelivery > 0 ? `${pendingAtDelivery} ${item.unit || 'Kg'}` : '0';
+        if (isTinto) {
+          row['Data Pedida'] = formatShortDate(item.requestedDate);
+          row['Prazo Final'] = formatShortDate(item.deadline);
+        }
+        row['Estado'] = rowStatus;
+        row['Quantidade entregue'] = `${d.quantity} ${item.unit || 'Kg'}`;
+        row['Guia de Remessa'] = d.deliveryNote || '';
+        row['Data da entrega'] = date;
+        row['Observações'] = d.observations || '';
+        exportData.push(row);
       });
     }
   });
 
   const worksheet = XLSX.utils.json_to_sheet(exportData);
   
-  // Set column widths
-  const wscols = [
-    { wch: 15 }, // Número do pedido
-    { wch: 40 }, // Descrição de Fio
-    { wch: 15 }, // Destino
-    { wch: 12 }, // Solicitado
-    { wch: 12 }, // Em falta
-    { wch: 12 }, // Estado
-    { wch: 20 }, // Quantidade entregue
-    { wch: 20 }, // Guia de Remessa
-    { wch: 15 }, // Data da entrega
-    { wch: 40 }  // Observações
-  ];
-  worksheet['!cols'] = wscols;
+  if (exportData.length > 0) {
+    const keys = Object.keys(exportData[0]);
+    const wscols = keys.map(key => {
+      let width = 15;
+      if (key === 'Descrição de Fio' || key === 'Observações') width = 40;
+      else if (key === 'Destino' || key === 'Quantidade entregue') width = 20;
+      else if (key === 'Solicitado' || key === 'Em falta' || key === 'Estado') width = 12;
+      return { wch: width };
+    });
+    worksheet['!cols'] = wscols;
+  }
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock');
