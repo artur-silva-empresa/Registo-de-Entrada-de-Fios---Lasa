@@ -99,14 +99,14 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
   const [deliveryNote, setDeliveryNote] = useState('');
   const [deliveryObservations, setDeliveryObservations] = useState('');
-  const [deliveryStatus, setDeliveryStatus] = useState<'entregue' | 'bobinar_2_1'>('entregue');
+  const [deliveryStatus, setDeliveryStatus] = useState<'entregue' | 'bobinar_2_1' | 'nao_aprovado'>('entregue');
 
   const [editingDelivery, setEditingDelivery] = useState<any>(null);
   const [editDeliveryQuantity, setEditDeliveryQuantity] = useState('');
   const [editDeliveryDate, setEditDeliveryDate] = useState('');
   const [editDeliveryNote, setEditDeliveryNote] = useState('');
   const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
-  const [editDeliveryStatus, setEditDeliveryStatus] = useState<'entregue' | 'bobinar_2_1'>('entregue');
+  const [editDeliveryStatus, setEditDeliveryStatus] = useState<'entregue' | 'bobinar_2_1' | 'nao_aprovado'>('entregue');
 
   const [editingItemField, setEditingItemField] = useState<{ id: string, field: 'dyeingDate' | 'deadline' } | null>(null);
   const [editingItemValue, setEditingItemValue] = useState('');
@@ -656,7 +656,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                                               <div key={delivery.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 text-sm bg-white p-3 rounded-lg border border-slate-100 shadow-sm group">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1">
                                                   <div className="flex items-center gap-2 min-w-[140px]">
-                                                    <span className={`font-bold ${delivery.status === 'bobinar_2_1' ? 'text-amber-500' : 'text-emerald-600'}`}>{delivery.quantity} {item.unit || 'Kg'} {delivery.status === 'bobinar_2_1' ? 'em bobinagem' : 'entregues'}</span>
+                                                    <span className={`font-bold ${delivery.status === 'nao_aprovado' ? 'text-orange-500' : delivery.status === 'bobinar_2_1' ? 'text-amber-500' : 'text-emerald-600'}`}>{delivery.quantity} {item.unit || 'Kg'} {delivery.status === 'nao_aprovado' ? 'em análise' : delivery.status === 'bobinar_2_1' ? 'em bobinagem' : 'entregues'}</span>
                                                     <span className="text-slate-400 text-xs">•</span>
                                                     <span className="text-slate-600">
                                                       {delivery.deliveryDate ? new Date(delivery.deliveryDate).toLocaleDateString('pt-PT') : new Date(delivery.date).toLocaleDateString('pt-PT')}
@@ -837,11 +837,12 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
                   <select
                     value={deliveryStatus}
-                    onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
+                    onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
                     className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
                     <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
+                    <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
                   </select>
                 </div>
               )}
@@ -947,11 +948,12 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
                   <select
                     value={editDeliveryStatus}
-                    onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1')}
+                    onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
                     className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
                     <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
+                    <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
                   </select>
                 </div>
               )}

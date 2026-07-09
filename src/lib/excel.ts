@@ -70,7 +70,8 @@ export const exportToExcel = (requests: Request[], items: RequestItem[], deliver
         const pendingAtDelivery = Number(item.quantity || 0) - runningDelivered;
         
         let rowStatus = 'Pendente';
-        if (pendingAtDelivery <= 0) rowStatus = 'Completo';
+        if (d.status === 'nao_aprovado') rowStatus = 'Em análise';
+        else if (pendingAtDelivery <= 0) rowStatus = 'Completo';
         else if (runningDelivered > 0) rowStatus = 'Parcial';
 
         const date = new Date(d.deliveryDate || d.date).toLocaleDateString('pt-PT');

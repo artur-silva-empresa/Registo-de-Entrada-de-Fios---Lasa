@@ -34,7 +34,7 @@ export type Delivery = {
   deliveryNote?: string;
   deliveryDate?: string;
   observations?: string;
-  status?: 'entregue' | 'bobinar_2_1';
+  status?: 'entregue' | 'bobinar_2_1' | 'nao_aprovado';
 };
 
 type AppState = {
@@ -49,7 +49,7 @@ type AppState = {
 type AppContextType = {
   state: AppState;
   addRequest: (request: Omit<Request, 'id' | 'uploadDate'>, items: Omit<RequestItem, 'id' | 'requestId'>[]) => void;
-  addDelivery: (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1') => void;
+  addDelivery: (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1' | 'nao_aprovado') => void;
   updateDelivery: (id: string, updates: Partial<Delivery>) => void;
   deleteDelivery: (id: string) => void;
   updateRequestItem: (itemId: string, updates: Partial<Omit<RequestItem, 'id' | 'requestId'>>) => void;
@@ -542,7 +542,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const addDelivery = async (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1') => {
+  const addDelivery = async (itemId: string, quantity: number, deliveryNote: string, deliveryDate: string, observations: string, status?: 'entregue' | 'bobinar_2_1' | 'nao_aprovado') => {
     const delivery: Delivery = {
       id: crypto.randomUUID(),
       itemId,
