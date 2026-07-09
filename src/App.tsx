@@ -22,6 +22,33 @@ function MainLayout() {
   };
 
   useEffect(() => {
+    let hasAttemptedFullscreen = false;
+
+    const tryFullscreen = () => {
+      if (hasAttemptedFullscreen) return;
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      }
+      hasAttemptedFullscreen = true;
+      document.removeEventListener('click', tryFullscreen);
+      document.removeEventListener('keydown', tryFullscreen);
+      document.removeEventListener('touchstart', tryFullscreen);
+    };
+
+    document.addEventListener('click', tryFullscreen);
+    document.addEventListener('keydown', tryFullscreen);
+    document.addEventListener('touchstart', tryFullscreen);
+
+    return () => {
+      document.removeEventListener('click', tryFullscreen);
+      document.removeEventListener('keydown', tryFullscreen);
+      document.removeEventListener('touchstart', tryFullscreen);
+    };
+  }, []);
+
+  useEffect(() => {
     if (state.highContrast) {
       document.documentElement.classList.add('high-contrast');
     } else {
