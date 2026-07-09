@@ -346,6 +346,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleOpenFile = async () => {
     try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(`Error attempting to enable fullscreen: ${err.message}`));
+      }
       navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       let handle: any = null;
@@ -421,6 +424,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleNewFile = async () => {
     try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(`Error attempting to enable fullscreen: ${err.message}`));
+      }
       navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
 
       let handle: any = null;
