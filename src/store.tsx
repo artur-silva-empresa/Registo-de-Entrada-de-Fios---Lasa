@@ -632,6 +632,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             <div className="flex flex-col gap-4">
               <button 
                 onClick={handleOpenFile}
+                title="No próximo ecrã pressionar as teclas Ctrl+V dar Enter de seguida..."
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Abrir Ficheiro Existente (.json)
