@@ -54,6 +54,7 @@ const isPastDate = (dateStr?: string) => {
   
   const now = new Date();
   now.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
   
   return d.getTime() < now.getTime();
 };
@@ -540,7 +541,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                               return (
                                 <React.Fragment key={item.id}>
                                   <tr 
-                                    className={`${isDeadlineDelayed ? 'bg-red-50' : 'bg-white'} ${hasDeliveries ? `cursor-pointer ${isDeadlineDelayed ? 'hover:bg-red-100' : 'hover:bg-slate-50'} transition-colors` : ''}`}
+                                    className={`${isDeadlineDelayed ? 'bg-red-100' : 'bg-white'} ${hasDeliveries ? `cursor-pointer ${isDeadlineDelayed ? 'hover:bg-red-200' : 'hover:bg-slate-50'} transition-colors` : ''}`}
                                     onClick={() => hasDeliveries && toggleItem(item.id)}
                                   >
                                     {type === 'cru' ? (

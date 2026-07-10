@@ -64,6 +64,19 @@
 .dark .hover\:bg-slate-200:hover {
   background-color: #64748b !important;
 }
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+}
+.dark .hover\:bg-red-100:hover {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+}
+.dark .hover\:bg-red-200:hover {
+  background-color: rgba(239, 68, 68, 0.35) !important;
+}
+
 .dark .shadow-sm, .dark .shadow-md, .dark .shadow-lg {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5) !important;
 }
