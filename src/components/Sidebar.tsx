@@ -264,14 +264,14 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       <div className={cn("p-4 border-t border-slate-200 space-y-1 overflow-hidden transition-all duration-300", isCollapsed && "flex flex-col items-center")}>
         <button
           onClick={downloadBackup}
-          title="Transferir Backup"
+          title="Guardar Base de Dados"
           className={cn(
             "flex items-center rounded-lg text-sm font-medium transition-all duration-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700 whitespace-nowrap overflow-hidden",
             isCollapsed ? "justify-center w-10 h-10 px-0" : "w-full px-4 py-3"
           )}
         >
           <Download className={cn("text-blue-500 shrink-0 transition-all duration-300", isCollapsed ? "w-6 h-6" : "w-5 h-5")} />
-          <span className={cn("transition-all duration-300", isCollapsed ? "opacity-0 w-0" : "opacity-100 ml-3")}>Transferir Backup</span>
+          <span className={cn("transition-all duration-300", isCollapsed ? "opacity-0 w-0" : "opacity-100 ml-3")}>Guardar Base de Dados</span>
         </button>
         <button
           onClick={() => onNavigate('settings')}

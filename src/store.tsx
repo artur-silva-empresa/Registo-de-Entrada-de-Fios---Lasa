@@ -74,7 +74,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEY = 'fios_app_data';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [], darkMode: true, highContrast: true });
+  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [], darkMode: false, highContrast: false });
   const [fileHandle, setFileHandle] = useState<any>(null);
   const [storedHandle, setStoredHandle] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm?: () => void}>({ isOpen: false, title: '', message: '' });
@@ -317,8 +317,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
         items: Array.isArray(parsed.items) ? parsed.items : [],
         deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : [],
-        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : true,
-        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : true
+        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : false,
+        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : false
       });
       setFileHandle(storedHandle);
     } catch (e: any) {
@@ -398,8 +398,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
         items: Array.isArray(parsed.items) ? parsed.items : [],
         deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : [],
-        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : true,
-        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : true
+        darkMode: parsed.darkMode !== undefined ? parsed.darkMode : false,
+        highContrast: parsed.highContrast !== undefined ? parsed.highContrast : false
       });
       setFileHandle(handle);
 
@@ -425,7 +425,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       let handle: any = null;
       let isFallback = false;
-      const initialState = { requests: [], items: [], deliveries: [], darkMode: true, highContrast: true };
+      const initialState = { requests: [], items: [], deliveries: [], darkMode: false, highContrast: false };
 
       try {
         if ('showSaveFilePicker' in window) {
@@ -637,7 +637,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 >
                   Abrir Ficheiro Existente (.json)
                 </button>
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-max max-w-[16rem] bg-slate-800 text-white text-[15px] leading-relaxed text-center py-3 px-4 rounded-lg shadow-xl z-50 pointer-events-none border border-slate-700">
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-max max-w-[18rem] bg-slate-800 text-white text-lg leading-relaxed text-center py-3 px-4 rounded-lg shadow-xl z-50 pointer-events-none border border-slate-700">
                   No próximo ecrã pressionar as teclas <strong className="text-blue-300">Ctrl+V</strong> e dar <strong className="text-blue-300">Enter</strong> de seguida...
                   <div className="absolute left-1/2 -translate-x-1/2 top-full border-8 border-transparent border-t-slate-700"></div>
                   <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-[1px] border-8 border-transparent border-t-slate-800"></div>
