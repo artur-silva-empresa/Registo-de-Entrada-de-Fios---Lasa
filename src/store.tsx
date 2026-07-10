@@ -630,13 +630,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               Para começar, por favor selecione a base de dados (ficheiro .json) ou crie uma nova.
             </p>
             <div className="flex flex-col gap-4">
-              <button 
-                onClick={handleOpenFile}
-                title="No próximo ecrã pressionar as teclas Ctrl+V dar Enter de seguida..."
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer shadow-sm"
-              >
-                Abrir Ficheiro Existente (.json)
-              </button>
+              <div className="relative group">
+                <button 
+                  onClick={handleOpenFile}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer shadow-sm"
+                >
+                  Abrir Ficheiro Existente (.json)
+                </button>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-max max-w-[16rem] bg-slate-800 text-white text-[15px] leading-relaxed text-center py-3 px-4 rounded-lg shadow-xl z-50 pointer-events-none border border-slate-700">
+                  No próximo ecrã pressionar as teclas <strong className="text-blue-300">Ctrl+V</strong> e dar <strong className="text-blue-300">Enter</strong> de seguida...
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full border-8 border-transparent border-t-slate-700"></div>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-[1px] border-8 border-transparent border-t-slate-800"></div>
+                </div>
+              </div>
               <button 
                 onClick={handleNewFile}
                 className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer border border-slate-300 mt-2"
