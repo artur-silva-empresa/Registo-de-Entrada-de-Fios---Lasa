@@ -106,7 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const copyPathToClipboard = () => {
       try {
-        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
+        navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks\\LasaBD.json").catch(() => {});
       } catch (err) {}
       document.removeEventListener('click', copyPathToClipboard);
     };
@@ -211,7 +211,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const downloadBackup = async () => {
     try {
       // Fazemos a cópia de forma assíncrona sem await, para que o JS continue imediatamente
-      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks\\LasaBD.json").catch(() => {});
 
       if ('showSaveFilePicker' in window) {
         try {
@@ -269,7 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const memorizeFile = async () => {
     try {
-      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks\\LasaBD.json").catch(() => {});
 
       if (!('showOpenFilePicker' in window)) {
         return { success: false, message: 'O seu browser não suporta acesso direto a ficheiros para memorização.' };
@@ -346,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleOpenFile = async () => {
     try {
-      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks\\LasaBD.json").catch(() => {});
 
       let handle: any = null;
       let contents = '';
@@ -421,7 +421,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleNewFile = async () => {
     try {
-      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks").catch(() => {});
+      navigator.clipboard.writeText("\\\\192.2.3.5\\nas15\\Armazém de Fio - Stocks\\LasaBD.json").catch(() => {});
 
       let handle: any = null;
       let isFallback = false;

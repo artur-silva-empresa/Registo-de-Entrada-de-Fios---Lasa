@@ -8,17 +8,22 @@ import { Entregas } from './pages/Entregas';
 import { Stock } from './pages/Stock';
 import { Faltas } from './pages/Faltas';
 import { Settings } from './pages/Settings';
+import { X } from 'lucide-react';
 
 function MainLayout() {
   const [currentPage, setCurrentPage] = useState('cru_dashboard');
   const [previousPage, setPreviousPage] = useState('cru_dashboard');
-  const { state } = useAppStore();
+  const { state, closeDatabase, showModal } = useAppStore();
 
   const handleNavigate = (page: string) => {
     if (page !== 'settings') {
       setPreviousPage(page);
     }
     setCurrentPage(page);
+  };
+
+  const confirmClose = () => {
+    showModal('Fechar Base de Dados', 'Tem a certeza que pretende fechar a base de dados atual?', closeDatabase);
   };
 
   useEffect(() => {
@@ -90,11 +95,22 @@ function MainLayout() {
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
-      <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-6 overflow-x-hidden">
-        <div className="mx-auto w-full max-w-full">
-          {renderPage()}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        <div className="flex justify-end p-3 pb-0 pr-4">
+          <button
+            onClick={confirmClose}
+            className="p-1.5 bg-slate-900 text-white hover:bg-slate-700 dark:bg-[#f8fafc] dark:text-[#0f172a] dark:hover:bg-[#e2e8f0] shadow-sm border border-slate-700 dark:border-[#cbd5e1] rounded-md transition-colors shrink-0"
+            title="Fechar Base de Dados"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      </main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-6 pt-2 md:pt-2 lg:pt-2 overflow-x-hidden relative">
+          <div className="mx-auto w-full max-w-full">
+            {renderPage()}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

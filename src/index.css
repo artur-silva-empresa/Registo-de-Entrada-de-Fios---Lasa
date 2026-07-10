@@ -64,6 +64,9 @@
 .dark .hover\:bg-slate-200:hover {
   background-color: #64748b !important;
 }
+.dark .hover\:text-slate-800:hover {
+  color: #f8fafc !important; /* text-slate-50 */
+}
 .dark .bg-red-50 {
   background-color: rgba(239, 68, 68, 0.15) !important;
 }
