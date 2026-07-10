@@ -11,8 +11,8 @@ import { Settings } from './pages/Settings';
 import { X } from 'lucide-react';
 
 function MainLayout() {
-  const [currentPage, setCurrentPage] = useState('cru_dashboard');
-  const [previousPage, setPreviousPage] = useState('cru_dashboard');
+  const [currentPage, setCurrentPage] = useState('tinto_pedidos');
+  const [previousPage, setPreviousPage] = useState('tinto_pedidos');
   const { state, closeDatabase, showModal } = useAppStore();
 
   const handleNavigate = (page: string) => {
