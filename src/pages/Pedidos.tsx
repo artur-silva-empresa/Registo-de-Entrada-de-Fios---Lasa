@@ -218,7 +218,24 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const deliveries = state.deliveries.filter(d => itemIds.has(d.itemId));
 
   const handleExport = () => {
-    exportToExcel(requests, items, deliveries);
+    let filterName = 'Exportacao';
+    if (type === 'cru') {
+      if (filterType === 'all') filterName = 'Todos os Pedidos';
+      else if (filterType === 'certificados') filterName = 'Pedidos Fios Certificados';
+      else if (filterType === 'normais') filterName = 'Pedidos Fios Normais';
+    } else if (type === 'tinto') {
+      if (filterType === 'all') filterName = 'Todos os Pedidos';
+      else if (filterType === 'tramar') filterName = 'Fios para Tramar';
+      else if (filterType === 'urdir') filterName = 'Fios para Urdir';
+      else if (filterType === 'atraso') filterName = 'Em Atraso';
+      else if (filterType === 'melhoria') filterName = 'Pedir Melhoria de Prazo';
+    }
+
+    const d = new Date();
+    const formattedDate = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    const filename = `${filterName} - ${formattedDate}.xlsx`;
+
+    exportToExcel(requests, items, deliveries, filename);
   };
 
   const toggleItem = (itemId: string) => {

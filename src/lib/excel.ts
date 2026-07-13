@@ -22,7 +22,7 @@ export type ParsedRequest = {
   }[];
 };
 
-export const exportToExcel = (requests: Request[], items: RequestItem[], deliveries: Delivery[]) => {
+export const exportToExcel = (requests: Request[], items: RequestItem[], deliveries: Delivery[], filename: string = 'Exportacao_Stock.xlsx') => {
   const exportData: any[] = [];
 
   items.forEach(item => {
@@ -116,7 +116,7 @@ export const exportToExcel = (requests: Request[], items: RequestItem[], deliver
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock');
   
-  XLSX.writeFile(workbook, 'Exportacao_Stock.xlsx');
+  XLSX.writeFile(workbook, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
 };
 
 export const exportDeliveriesToExcel = (data: any[], filename: string) => {
