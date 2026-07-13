@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, FileSpreadsheet, PackageCheck, Package, BarChart3, AlertTriangle, Settings, Save, Download, LogOut, ChevronDown, ChevronRight, PanelLeftClose, PanelLeftOpen, Eye, Moon, Sun } from 'lucide-react';
-import { cn, isPastDate } from '../lib/utils';
+import { cn, isPastDate, parseCustomDate } from '../lib/utils';
 import { useAppStore } from '../store';
 
 type SidebarProps = {
@@ -24,6 +24,21 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     return !isCompleted && isPastDate(i.deadline);
   }).length;
 
+  const melhoriaTintoItemsCount = state.items.filter(i => {
+    const request = state.requests.find(r => r.id === i.requestId);
+    if (!request || request.type !== 'tinto') return false;
+    
+    const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    const isCompleted = delivered >= Number(i.quantity);
+    if (isCompleted) return false;
+
+    const d = parseCustomDate(i.deadline);
+    const r = parseCustomDate(i.requestedDate);
+    if (!d || !r) return false;
+    
+    return d.getTime() > r.getTime();
+  }).length;
+
   const cruItems = [
     { id: 'cru_dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cru_pedidos', label: 'Pedidos de Fio', icon: FileSpreadsheet },
@@ -35,7 +50,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   const tintoItems = [
     { id: 'tinto_dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tinto_pedidos', label: 'Pedidos de Tingimento', icon: FileSpreadsheet, badge: delayedTintoItemsCount > 0 ? delayedTintoItemsCount : undefined },
+    { id: 'tinto_pedidos', label: 'Pedidos de Tingimento', icon: FileSpreadsheet, badge: delayedTintoItemsCount > 0 ? delayedTintoItemsCount : undefined, badgeMelhoria: melhoriaTintoItemsCount > 0 ? melhoriaTintoItemsCount : undefined },
     { id: 'tinto_entradas', label: 'Entradas (Receção)', icon: PackageCheck },
     { id: 'tinto_entregas', label: 'Histórico de Entregas', icon: Package },
     { id: 'tinto_stock', label: 'Stock / Faltas', icon: BarChart3 },
@@ -210,11 +225,18 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                             <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
                             <span className="truncate">{item.label}</span>
                           </div>
-                          {item.badge !== undefined && (
-                            <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold shrink-0 ml-2">
-                              {item.badge}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            {item.badge !== undefined && (
+                              <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                                {item.badge}
+                              </span>
+                            )}
+                            {(item as any).badgeMelhoria !== undefined && (
+                              <span className="bg-yellow-100 text-orange-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                                {(item as any).badgeMelhoria}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
@@ -248,11 +270,18 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                         <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-red-600" : "text-slate-400")} />
                         <span className="truncate">{item.label}</span>
                       </div>
-                      {item.badge !== undefined && (
-                        <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold shrink-0 ml-2">
-                          {item.badge}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {item.badge !== undefined && (
+                          <span className="bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                            {item.badge}
+                          </span>
+                        )}
+                        {(item as any).badgeMelhoria !== undefined && (
+                          <span className="bg-yellow-100 text-orange-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                            {(item as any).badgeMelhoria}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}

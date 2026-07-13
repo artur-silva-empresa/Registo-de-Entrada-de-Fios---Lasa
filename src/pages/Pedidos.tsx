@@ -151,6 +151,17 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
 
   const isItemTramar = (item: any) => item.bobbin2To1 && String(item.bobbin2To1).trim() !== '' && String(item.bobbin2To1).trim() !== '-';
 
+  const isMelhoriaDePrazo = (item: any) => {
+    const delivered = state.deliveries.filter(d => d.itemId === item.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+    const isCompleted = delivered >= Number(item.quantity);
+    if (isCompleted) return false;
+
+    const d = parseCustomDateLocal(item.deadline);
+    const r = parseCustomDateLocal(item.requestedDate);
+    if (!d || !r) return false;
+    return d.getTime() > r.getTime();
+  };
+
   const requests = allRequests.filter(request => {
     if (type === 'cru' && filterType !== 'all') {
       const isCertificado = /^\d{4}\s*-/.test(request.number);
@@ -171,6 +182,8 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
           const isCompleted = delivered >= Number(i.quantity);
           return !isCompleted && isPastDate(i.deadline);
         });
+      } else if (filterType === 'melhoria') {
+        requestItems = requestItems.filter(isMelhoriaDePrazo);
       }
       if (requestItems.length === 0) return false;
     }
@@ -197,6 +210,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
         const isCompleted = delivered >= Number(i.quantity);
         return !isCompleted && isPastDate(i.deadline);
       }
+      if (filterType === 'melhoria') return isMelhoriaDePrazo(i);
     }
     return true;
   });
@@ -357,6 +371,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
               <option value="tramar" className="bg-white text-slate-900">Fios para Tramar</option>
               <option value="urdir" className="bg-white text-slate-900">Fios para Urdir</option>
               <option value="atraso" className="bg-white text-slate-900">Em Atraso</option>
+              <option value="melhoria" className="bg-white text-slate-900">Pedir Melhoria de Prazo</option>
             </select>
           )}
         </div>
