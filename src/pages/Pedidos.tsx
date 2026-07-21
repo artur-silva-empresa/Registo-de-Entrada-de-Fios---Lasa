@@ -114,6 +114,7 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
 
   const startEditingItem = (item: any, field: 'dyeingDate' | 'deadline') => {
     setEditingItemField({ id: item.id, field });
@@ -171,21 +172,26 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
 
     let requestItems = allItems.filter(i => i.requestId === request.id);
 
-    if (type === 'tinto' && filterType !== 'all') {
-      if (filterType === 'tramar') {
-        requestItems = requestItems.filter(isItemTramar);
-      } else if (filterType === 'urdir') {
-        requestItems = requestItems.filter(i => !isItemTramar(i));
-      } else if (filterType === 'atraso') {
-        requestItems = requestItems.filter(i => {
-          const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
-          const isCompleted = delivered >= Number(i.quantity);
-          return !isCompleted && isPastDate(i.deadline);
-        });
-      } else if (filterType === 'melhoria') {
-        requestItems = requestItems.filter(isMelhoriaDePrazo);
+    if (type === 'tinto') {
+      if (companyFilter === 'lasa' && !request.number.toLowerCase().includes('lasa')) return false;
+      if (companyFilter === 'luzmonte' && !request.number.toLowerCase().includes('luzmonte')) return false;
+
+      if (filterType !== 'all') {
+        if (filterType === 'tramar') {
+          requestItems = requestItems.filter(isItemTramar);
+        } else if (filterType === 'urdir') {
+          requestItems = requestItems.filter(i => !isItemTramar(i));
+        } else if (filterType === 'atraso') {
+          requestItems = requestItems.filter(i => {
+            const delivered = state.deliveries.filter(d => d.itemId === i.id).reduce((sum, d) => sum + Number(d.quantity || 0), 0);
+            const isCompleted = delivered >= Number(i.quantity);
+            return !isCompleted && isPastDate(i.deadline);
+          });
+        } else if (filterType === 'melhoria') {
+          requestItems = requestItems.filter(isMelhoriaDePrazo);
+        }
+        if (requestItems.length === 0) return false;
       }
-      if (requestItems.length === 0) return false;
     }
 
     if (!searchTerm) return true;
@@ -224,11 +230,17 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
       else if (filterType === 'certificados') filterName = 'Pedidos Fios Certificados';
       else if (filterType === 'normais') filterName = 'Pedidos Fios Normais';
     } else if (type === 'tinto') {
-      if (filterType === 'all') filterName = 'Todos os Pedidos';
-      else if (filterType === 'tramar') filterName = 'Fios para Tramar';
-      else if (filterType === 'urdir') filterName = 'Fios para Urdir';
-      else if (filterType === 'atraso') filterName = 'Em Atraso';
-      else if (filterType === 'melhoria') filterName = 'Pedir Melhoria de Prazo';
+      let companyStr = 'Todos os Pedidos';
+      if (companyFilter === 'lasa') companyStr = 'Pedidos Lasa';
+      else if (companyFilter === 'luzmonte') companyStr = 'Pedidos Luzmonte';
+      
+      let typeStr = '';
+      if (filterType === 'tramar') typeStr = ' - Fios para Tramar';
+      else if (filterType === 'urdir') typeStr = ' - Fios para Urdir';
+      else if (filterType === 'atraso') typeStr = ' - Em Atraso';
+      else if (filterType === 'melhoria') typeStr = ' - Pedir Melhoria de Prazo';
+
+      filterName = `${companyStr}${typeStr}`;
     }
 
     const d = new Date();
@@ -379,17 +391,28 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
             </select>
           )}
           {type === 'tinto' && (
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-64"
-            >
-              <option value="all" className="bg-white text-slate-900">Todos os Pedidos</option>
-              <option value="tramar" className="bg-white text-slate-900">Fios para Tramar</option>
-              <option value="urdir" className="bg-white text-slate-900">Fios para Urdir</option>
-              <option value="atraso" className="bg-white text-slate-900">Em Atraso</option>
-              <option value="melhoria" className="bg-white text-slate-900">Pedir Melhoria de Prazo</option>
-            </select>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <select
+                value={companyFilter}
+                onChange={(e) => setCompanyFilter(e.target.value)}
+                className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-48"
+              >
+                <option value="all" className="bg-white text-slate-900">Todos os Pedidos</option>
+                <option value="lasa" className="bg-white text-slate-900">Pedidos Lasa</option>
+                <option value="luzmonte" className="bg-white text-slate-900">Pedidos Luzmonte</option>
+              </select>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-slate-700 sm:w-56"
+              >
+                <option value="all" className="bg-white text-slate-900">Todos os Estados</option>
+                <option value="tramar" className="bg-white text-slate-900">Fios para Tramar</option>
+                <option value="urdir" className="bg-white text-slate-900">Fios para Urdir</option>
+                <option value="atraso" className="bg-white text-slate-900">Em Atraso</option>
+                <option value="melhoria" className="bg-white text-slate-900">Pedir Melhoria de Prazo</option>
+              </select>
+            </div>
           )}
         </div>
       </header>

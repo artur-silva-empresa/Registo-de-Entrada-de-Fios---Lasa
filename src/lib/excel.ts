@@ -153,14 +153,22 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' }) as any[][];
 
         let isTinto = false;
+        let company = 'Lasa';
         
         // Check if it's tinto
         for (let i = 0; i < Math.min(rows.length, 10); i++) {
           const rowStr = rows[i]?.join(' ').toLowerCase() || '';
           if (rowStr.includes('pedido de tingimento')) {
             isTinto = true;
-            break;
           }
+          if (rowStr.includes('luzmonte')) {
+            company = 'Luzmonte';
+          }
+        }
+
+        const d1 = String(rows[0] && rows[0][3] ? rows[0][3] : '').toLowerCase();
+        if (d1.includes('luzmonte') || file.name.toLowerCase().includes('luzmonte')) {
+          company = 'Luzmonte';
         }
 
         if (isTinto) {
@@ -196,7 +204,7 @@ export const parseExcel = async (file: File): Promise<ParsedRequest> => {
             // Try to find request number and date
             if (!requestNumber) {
               const reqMatch = rowStr.match(/Pedido n[º°]\s*(\d+)/i);
-              if (reqMatch) requestNumber = reqMatch[1];
+              if (reqMatch) requestNumber = `${company} ${reqMatch[1]}`;
             }
             if (!requestDate) {
               const dateMatch = rowStr.match(/Data de Emissão\s*:\s*([^ ]+)/i) || rowStr.match(/Emissão\s*:\s*([^ ]+)/i);

@@ -74,7 +74,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEY = 'fios_app_data';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [], darkMode: false, highContrast: false });
+  const initialDarkMode = localStorage.getItem('lasa_darkMode') === 'true';
+  const initialHighContrast = localStorage.getItem('lasa_highContrast') === 'true';
+  const [state, setState] = useState<AppState>({ requests: [], items: [], deliveries: [], darkMode: initialDarkMode, highContrast: initialHighContrast });
   const [fileHandle, setFileHandle] = useState<any>(null);
   const [storedHandle, setStoredHandle] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm?: () => void}>({ isOpen: false, title: '', message: '' });
@@ -312,6 +314,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (contents.trim()) {
         parsed = JSON.parse(contents);
       }
+
+      const migrateData = (data: Partial<AppState>) => {
+        const requests = Array.isArray(data.requests) ? data.requests : [];
+        const newRequests = requests.map(req => {
+          if (req.type === 'tinto' && !req.number.toLowerCase().includes('lasa') && !req.number.toLowerCase().includes('luzmonte')) {
+            return { ...req, number: `Lasa ${req.number}` };
+          }
+          return req;
+        });
+        return { ...data, requests: newRequests };
+      };
+
+      parsed = migrateData(parsed);
       
       setState({
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
@@ -393,7 +408,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
       }
-      
+
+      const migrateData = (data: Partial<AppState>) => {
+        const requests = Array.isArray(data.requests) ? data.requests : [];
+        const newRequests = requests.map(req => {
+          if (req.type === 'tinto' && !req.number.toLowerCase().includes('lasa') && !req.number.toLowerCase().includes('luzmonte')) {
+            return { ...req, number: `Lasa ${req.number}` };
+          }
+          return req;
+        });
+        return { ...data, requests: newRequests };
+      };
+
+      parsed = migrateData(parsed);
+
       setState({
         requests: Array.isArray(parsed.requests) ? parsed.requests : [],
         items: Array.isArray(parsed.items) ? parsed.items : [],
@@ -599,17 +627,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleHighContrast = () => {
-    setState(prev => ({
-      ...prev,
-      highContrast: !prev.highContrast
-    }));
+    setState(prev => {
+      const newValue = !prev.highContrast;
+      localStorage.setItem('lasa_highContrast', String(newValue));
+      return { ...prev, highContrast: newValue };
+    });
   };
 
   const toggleDarkMode = () => {
-    setState(prev => ({
-      ...prev,
-      darkMode: !prev.darkMode
-    }));
+    setState(prev => {
+      const newValue = !prev.darkMode;
+      localStorage.setItem('lasa_darkMode', String(newValue));
+      return { ...prev, darkMode: newValue };
+    });
   };
 
   const clearAll = async () => {

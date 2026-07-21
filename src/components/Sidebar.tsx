@@ -11,8 +11,17 @@ type SidebarProps = {
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { saveToFile, downloadBackup, closeDatabase, showModal, toggleHighContrast, toggleDarkMode, state } = useAppStore();
   const [expandedSection, setExpandedSection] = useState<'cru' | 'tinto' | null>(currentPage.startsWith('tinto') ? 'tinto' : 'cru');
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  
+  const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth <= 1400);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsCollapsed(window.innerWidth <= 1400);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Calculate atraso count
   const delayedTintoItemsCount = state.items.filter(i => {
     const request = state.requests.find(r => r.id === i.requestId);
