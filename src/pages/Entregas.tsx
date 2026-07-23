@@ -12,6 +12,7 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
   const [editDeliveryDate, setEditDeliveryDate] = useState('');
   const [editDeliveryNote, setEditDeliveryNote] = useState('');
   const [editDeliveryObservations, setEditDeliveryObservations] = useState('');
+  const [editDeliveryStatus, setEditDeliveryStatus] = useState<'entregue' | 'bobinar_2_1' | 'nao_aprovado'>('entregue');
 
   const requests = state.requests.filter(r => (r.type || 'cru') === type);
   const requestIds = new Set(requests.map(r => r.id));
@@ -49,6 +50,7 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
       'Secção': d.itemSection,
       'Quantidade': d.quantity,
       'Unidade': d.itemUnit,
+      'Estado': d.status === 'nao_aprovado' ? 'Fio não aprovado' : d.status === 'bobinar_2_1' ? 'Em processo de bobinagem' : 'Fio entregue',
       'Guia de Remessa': d.deliveryNote || '',
       'Observações': d.observations || ''
     }));
@@ -102,6 +104,7 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 <th className="px-2 py-2 font-semibold">Fio</th>
                 <th className="px-2 py-2 font-semibold text-right">Quantidade</th>
                 <th className="px-2 py-2 font-semibold">Data</th>
+                <th className="px-2 py-2 font-semibold">Estado</th>
                 <th className="px-2 py-2 font-semibold">Guia</th>
                 <th className="px-2 py-2 font-semibold">Observações</th>
                 <th className="px-2 py-2 font-semibold text-right">Ações</th>
@@ -110,7 +113,7 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
             <tbody className="divide-y divide-slate-100">
               {filteredDeliveries.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     Nenhuma entrega encontrada.
                   </td>
                 </tr>
@@ -138,6 +141,15 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                     <td className="px-2 py-2 whitespace-nowrap text-slate-600">
                       {new Date(delivery.displayDate).toLocaleDateString('pt-PT')}
                     </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full border ${
+                        delivery.status === 'nao_aprovado' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                        delivery.status === 'bobinar_2_1' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {delivery.status === 'nao_aprovado' ? 'Em análise' : delivery.status === 'bobinar_2_1' ? 'Em bobinagem' : 'Entregue'}
+                      </span>
+                    </td>
                     <td className="px-2 py-2 whitespace-nowrap text-slate-600">
                       {delivery.deliveryNote || '-'}
                     </td>
@@ -152,6 +164,7 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                           setEditDeliveryDate(delivery.displayDate);
                           setEditDeliveryNote(delivery.deliveryNote || '');
                           setEditDeliveryObservations(delivery.observations || '');
+                          setEditDeliveryStatus(delivery.status || 'entregue');
                         }}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
                         title="Editar Entrega"
@@ -216,11 +229,26 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                   Observações
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editDeliveryObservations}
                   onChange={(e) => setEditDeliveryObservations(e.target.value)}
                   className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Estado da Entrega
+                </label>
+                <select
+                  value={editDeliveryStatus}
+                  onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
+                  className="block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                >
+                  <option value="bobinar_2_1">Em processo de bobinagem</option>
+                  <option value="entregue">Fio entregue</option>
+                  <option value="nao_aprovado">Fio não aprovado</option>
+                </select>
               </div>
             </div>
 
@@ -238,7 +266,8 @@ export function Entregas({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                       quantity: Number(editDeliveryQuantity),
                       deliveryDate: editDeliveryDate,
                       deliveryNote: editDeliveryNote,
-                      observations: editDeliveryObservations
+                      observations: editDeliveryObservations,
+                      status: editDeliveryStatus
                     });
                     setSelectedDeliveryForEdit(null);
                   }

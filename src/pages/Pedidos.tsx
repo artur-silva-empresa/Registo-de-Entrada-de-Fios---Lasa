@@ -888,20 +888,18 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 />
               </div>
 
-              {type === 'tinto' && isItemTramar(selectedItemForDelivery) && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
-                  <select
-                    value={deliveryStatus}
-                    onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
-                    className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
-                    <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
-                    <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
+                <select
+                  value={deliveryStatus}
+                  onChange={(e) => setDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
+                  <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
+                  <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
+                </select>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -999,20 +997,18 @@ export function Pedidos({ type = 'cru' }: { type?: 'cru' | 'tinto' }) {
                 />
               </div>
 
-              {type === 'tinto' && editingDelivery?.originalItem && isItemTramar(editingDelivery.originalItem) && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
-                  <select
-                    value={editDeliveryStatus}
-                    onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
-                    className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
-                    <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
-                    <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Estado da Entrega</label>
+                <select
+                  value={editDeliveryStatus}
+                  onChange={(e) => setEditDeliveryStatus(e.target.value as 'entregue' | 'bobinar_2_1' | 'nao_aprovado')}
+                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="bobinar_2_1" className="bg-white text-slate-900">Em processo de bobinagem</option>
+                  <option value="entregue" className="bg-white text-slate-900">Fio entregue</option>
+                  <option value="nao_aprovado" className="bg-white text-slate-900">Fio não aprovado</option>
+                </select>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
