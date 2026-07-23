@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { Package, AlertCircle, CheckCircle2, TrendingUp, BellRing, Clock, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { Package, AlertCircle, CheckCircle2, TrendingUp, BellRing, Clock, ChevronDown, ChevronUp, ArrowRight, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { exportAlertsToExcel } from '../lib/excel';
 
 const splitText = (text: string, maxLength: number) => {
   const words = text.split(' ');
@@ -446,6 +447,15 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                   </button>
                 )}
               </div>
+
+              <button
+                onClick={() => exportAlertsToExcel(filteredAlerts, `Notificacoes_Prazos_${type === 'cru' ? 'Fio_Cru' : 'Fio_Tinto'}`)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg shadow-xs transition-colors shrink-0 cursor-pointer"
+                title="Exportar Notificações de Prazos Próximos para Excel"
+              >
+                <Download className="w-4 h-4" />
+                <span>Exportar Excel</span>
+              </button>
 
               <button
                 onClick={() => setIsAlertsOpen(!isAlertsOpen)}

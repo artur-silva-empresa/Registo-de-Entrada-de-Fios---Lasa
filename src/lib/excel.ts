@@ -141,6 +141,46 @@ export const exportDeliveriesToExcel = (data: any[], filename: string) => {
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 };
 
+export const exportAlertsToExcel = (alerts: any[], filename: string = 'Notificacoes_Prazos_Proximos.xlsx') => {
+  const exportData = alerts.map(alert => ({
+    'Estado do Prazo': alert.badgeLabel || '',
+    'Número do Pedido': alert.request?.number || 'N/A',
+    'Descrição de Fio': alert.item?.description || '',
+    'Cor do Cone': alert.item?.coneColor || '',
+    'Secção / Destino': alert.item?.section || '',
+    'Qtd Solicitada': `${Number(alert.item?.quantity || 0)} ${alert.item?.unit || 'Kg'}`,
+    'Qtd Entregue': `${Number(alert.delivered || 0)} ${alert.item?.unit || 'Kg'}`,
+    'Qtd Pendente': `${Number(alert.pendingQty || 0)} ${alert.item?.unit || 'Kg'}`,
+    'Data Pedida': formatShortDate(alert.item?.requestedDate),
+    'Prazo Final': alert.dateFormatted || formatShortDate(alert.item?.deadline),
+    'Observações': alert.item?.observations || ''
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  
+  if (exportData.length > 0) {
+    const wscols = [
+      { wch: 22 }, // Estado do Prazo
+      { wch: 18 }, // Número do Pedido
+      { wch: 40 }, // Descrição de Fio
+      { wch: 15 }, // Cor do Cone
+      { wch: 18 }, // Secção / Destino
+      { wch: 14 }, // Qtd Solicitada
+      { wch: 14 }, // Qtd Entregue
+      { wch: 14 }, // Qtd Pendente
+      { wch: 14 }, // Data Pedida
+      { wch: 14 }, // Prazo Final
+      { wch: 30 }  // Observações
+    ];
+    worksheet['!cols'] = wscols;
+  }
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Alertas de Prazos');
+  
+  XLSX.writeFile(workbook, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
+};
+
 export const parseExcel = async (file: File): Promise<ParsedRequest> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
