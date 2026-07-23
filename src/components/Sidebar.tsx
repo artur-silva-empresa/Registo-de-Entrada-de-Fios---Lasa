@@ -10,7 +10,8 @@ type SidebarProps = {
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { saveToFile, downloadBackup, closeDatabase, showModal, toggleHighContrast, toggleDarkMode, state } = useAppStore();
-  const [expandedSection, setExpandedSection] = useState<'cru' | 'tinto' | null>(currentPage.startsWith('tinto') ? 'tinto' : 'cru');
+  const [isCruOpen, setIsCruOpen] = useState(true);
+  const [isTintoOpen, setIsTintoOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth <= 1400);
 
   React.useEffect(() => {
@@ -96,16 +97,16 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <button 
               onClick={() => {
                 if (isCollapsed) {
-                  setExpandedSection('cru');
+                  setIsCruOpen(true);
                   setIsCollapsed(false);
                 } else {
-                  setExpandedSection(expandedSection === 'cru' ? null : 'cru');
+                  setIsCruOpen(!isCruOpen);
                 }
               }}
               className={cn(
                 "relative w-full flex items-center rounded-lg font-bold uppercase tracking-wider transition-all duration-300 mb-2 overflow-hidden whitespace-nowrap",
                 isCollapsed ? "h-10 justify-center px-0" : "px-4 py-3 justify-between",
-                (isCollapsed ? currentPage.startsWith('cru') : expandedSection === 'cru') 
+                (isCollapsed ? currentPage.startsWith('cru') : isCruOpen) 
                   ? "bg-slate-800 text-white shadow-sm" 
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               )}
@@ -115,7 +116,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                 <span className="text-base">C</span>
               </div>
               <div className={cn("transition-all duration-300 overflow-hidden flex items-center", isCollapsed ? "w-0 opacity-0" : "w-4 opacity-100")}>
-                {expandedSection === 'cru' ? <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                {isCruOpen ? <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
               </div>
             </button>
 
@@ -153,7 +154,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           
           <div className={cn(
             "grid transition-all duration-300 ease-in-out",
-            (expandedSection === 'cru' && !isCollapsed) ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0"
+            (isCruOpen && !isCollapsed) ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0"
           )}>
             <div className="overflow-hidden">
               <div className="space-y-1 pl-2 border-l-2 border-slate-100 ml-2 mt-2">
@@ -186,16 +187,16 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <button 
               onClick={() => {
                 if (isCollapsed) {
-                  setExpandedSection('tinto');
+                  setIsTintoOpen(true);
                   setIsCollapsed(false);
                 } else {
-                  setExpandedSection(expandedSection === 'tinto' ? null : 'tinto');
+                  setIsTintoOpen(!isTintoOpen);
                 }
               }}
               className={cn(
                 "relative w-full flex items-center rounded-lg font-bold uppercase tracking-wider transition-all duration-300 mb-2 overflow-hidden whitespace-nowrap",
                 isCollapsed ? "h-10 justify-center px-0" : "px-4 py-3 justify-between",
-                (isCollapsed ? currentPage.startsWith('tinto') : expandedSection === 'tinto') 
+                (isCollapsed ? currentPage.startsWith('tinto') : isTintoOpen) 
                   ? "bg-slate-800 text-white shadow-sm" 
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               )}
@@ -205,7 +206,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                 <span className="text-base">T</span>
               </div>
               <div className={cn("transition-all duration-300 overflow-hidden flex items-center", isCollapsed ? "w-0 opacity-0" : "w-4 opacity-100")}>
-                {expandedSection === 'tinto' ? <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                {isTintoOpen ? <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
               </div>
             </button>
 
@@ -257,7 +258,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           
           <div className={cn(
             "grid transition-all duration-300 ease-in-out",
-            (expandedSection === 'tinto' && !isCollapsed) ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0"
+            (isTintoOpen && !isCollapsed) ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0"
           )}>
             <div className="overflow-hidden">
               <div className="space-y-1 pl-2 border-l-2 border-slate-100 ml-2 mt-2">
