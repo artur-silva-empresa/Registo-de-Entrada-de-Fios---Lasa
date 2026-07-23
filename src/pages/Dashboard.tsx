@@ -313,15 +313,15 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
     if (diffHours < 0) {
       status = 'overdue';
       badgeLabel = 'Em Atraso';
-      badgeColor = 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800';
+      badgeColor = 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40';
     } else if (diffHours <= 24) {
       status = 'today';
       badgeLabel = 'Expira Hoje (< 24h)';
-      badgeColor = 'bg-red-100 text-red-800 border-red-300 animate-pulse dark:bg-red-950/80 dark:text-red-300 dark:border-red-800';
+      badgeColor = 'bg-red-100 text-red-800 border-red-300 animate-pulse dark:bg-red-500/25 dark:text-red-300 dark:border-red-500/50';
     } else if (diffHours <= 48) {
       status = 'within48h';
       badgeLabel = 'Expira Amanhã (< 48h)';
-      badgeColor = 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800';
+      badgeColor = 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40';
     } else {
       return null;
     }
@@ -382,10 +382,10 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
 
       {/* Visual Notification Alert System for <= 48h Deadlines */}
       {expiringAlerts.length > 0 ? (
-        <div className="bg-gradient-to-r from-amber-50 via-orange-50/70 to-red-50/80 dark:from-slate-800/90 dark:via-slate-800 dark:to-slate-900 border border-amber-200/90 dark:border-amber-500/30 rounded-2xl p-5 shadow-sm transition-all duration-300">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-amber-200/60 dark:border-slate-700/60">
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50/70 to-red-50/80 dark:from-slate-900 dark:via-slate-900/95 dark:to-slate-900 border border-amber-200/90 dark:border-amber-500/35 rounded-2xl p-5 shadow-sm transition-all duration-300">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-amber-200/60 dark:border-slate-800">
             <div className="flex items-center gap-3.5">
-              <div className="relative p-3 bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-400 rounded-xl shrink-0">
+              <div className="relative p-3 bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-xl shrink-0 border border-amber-500/20 dark:border-amber-500/30">
                 <BellRing className="w-6 h-6 animate-bounce" />
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -413,13 +413,13 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
             </div>
 
             <div className="flex items-center gap-2 self-end md:self-auto shrink-0 flex-wrap">
-              <div className="flex items-center bg-white/80 dark:bg-slate-900/80 p-1 rounded-lg border border-amber-200/60 dark:border-slate-700 text-xs">
+              <div className="flex items-center bg-white/80 dark:bg-slate-950/80 p-1 rounded-lg border border-amber-200/60 dark:border-slate-800 text-xs">
                 <button
                   onClick={() => setAlertFilter('all')}
                   className={`px-2.5 py-1 rounded-md font-medium transition-all ${
                     alertFilter === 'all'
                       ? 'bg-amber-500 text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Todos ({expiringAlerts.length})
@@ -429,7 +429,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                   className={`px-2.5 py-1 rounded-md font-medium transition-all ${
                     alertFilter === '48h'
                       ? 'bg-amber-500 text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   Próximas 48h ({count48h})
@@ -440,7 +440,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                     className={`px-2.5 py-1 rounded-md font-medium transition-all ${
                       alertFilter === 'overdue'
                         ? 'bg-rose-600 text-white font-bold shadow-xs'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     Em Atraso ({countOverdue})
@@ -459,7 +459,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
 
               <button
                 onClick={() => setIsAlertsOpen(!isAlertsOpen)}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
                 {isAlertsOpen ? (
                   <>
@@ -485,7 +485,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                 return (
                   <div
                     key={alert.item.id}
-                    className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-amber-200/70 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3 relative overflow-hidden group"
+                    className="bg-white dark:bg-slate-800/90 rounded-xl p-4 border border-amber-200/70 dark:border-slate-700/80 shadow-xs hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500/60 transition-all flex flex-col justify-between gap-3 relative overflow-hidden group"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -493,12 +493,12 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                           #{alert.request.number}
                         </span>
                         {type === 'tinto' && isLasa && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-[10px] rounded-md">
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 font-bold text-[10px] rounded-md border border-transparent dark:border-blue-700/50">
                             LASA
                           </span>
                         )}
                         {type === 'tinto' && isLuzmonte && (
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 font-bold text-[10px] rounded-md">
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 font-bold text-[10px] rounded-md border border-transparent dark:border-purple-700/50">
                             LUZMONTE
                           </span>
                         )}
@@ -520,17 +520,17 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
                       )}
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg text-xs space-y-1.5">
+                    <div className="bg-slate-50 dark:bg-slate-900/70 p-2.5 rounded-lg text-xs space-y-1.5 border border-slate-100 dark:border-slate-800">
                       <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
                         <span>Falta Entregar:</span>
                         <span className="font-bold text-red-600 dark:text-red-400 text-sm">
                           {alert.pendingQty.toLocaleString('pt-PT')} {alert.item.unit || 'Kg'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                      <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/50 dark:border-slate-800">
                         <span>Prazo Final:</span>
                         <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <Clock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                           {alert.dateFormatted}
                         </span>
                       </div>
@@ -538,7 +538,7 @@ export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto'
 
                     <button
                       onClick={() => onNavigate?.(type === 'tinto' ? 'tinto_pedidos' : 'cru_pedidos')}
-                      className="w-full flex items-center justify-center gap-1 text-xs font-semibold py-1.5 px-3 bg-slate-100 hover:bg-amber-500 hover:text-white dark:bg-slate-800 dark:hover:bg-amber-500 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center gap-1 text-xs font-semibold py-1.5 px-3 bg-slate-100 hover:bg-amber-500 hover:text-white dark:bg-slate-700/70 dark:hover:bg-amber-500 dark:hover:text-white text-slate-700 dark:text-slate-200 rounded-lg transition-colors border border-slate-200/60 dark:border-slate-700"
                     >
                       <span>Ver no Pedido</span>
                       <ArrowRight className="w-3.5 h-3.5" />
