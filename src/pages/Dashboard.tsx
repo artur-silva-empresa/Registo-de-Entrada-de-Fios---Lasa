@@ -80,7 +80,7 @@ const parseCustomDateLocal = (dateStr?: string): Date | null => {
 
 export function Dashboard({ type = 'cru', onNavigate }: { type?: 'cru' | 'tinto', onNavigate?: (page: string) => void }) {
   const { state } = useAppStore();
-  const [isAlertsOpen, setIsAlertsOpen] = useState(true);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [alertFilter, setAlertFilter] = useState<'all' | '48h' | 'overdue'>('all');
 
   const requests = state.requests
